@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "./db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "***REMOVED***",
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "",
   session: { strategy: "jwt" },
   providers: [
     GoogleProvider({
