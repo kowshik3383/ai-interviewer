@@ -39,7 +39,7 @@ export async function GET(req: Request, { params }: RouteParams) {
         const categoryScores = JSON.parse(session.categoryScores);
         const strengths = session.strengths ? JSON.parse(session.strengths) : [];
         const weaknesses = session.weaknesses ? JSON.parse(session.weaknesses) : [];
-        const scoredTurns = session.turns.filter((t) => t.role === "candidate");
+        const scoredTurns = session.turns.filter((t) => t.role === "candidate" && !t.skipped);
 
         const radarMetrics: RadarMetric[] = [
           { category: "Correctness", score: categoryScores.correctness ?? 0, fullMark: 100 },
@@ -99,6 +99,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       score: t.score,
       notes: t.evalNotes,
       codeSnapshot: t.codeSnapshot,
+      skipped: t.skipped,
     }));
 
     const report = await generateFinalReport({
@@ -163,6 +164,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       score: t.score,
       notes: t.evalNotes,
       codeSnapshot: t.codeSnapshot,
+      skipped: t.skipped,
     }));
 
     const report = await generateFinalReport({

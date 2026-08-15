@@ -5,6 +5,8 @@ import { requireUser, requireOwnedSession } from "@/lib/auth";
 import { buildInterviewerPrompt } from "@/lib/prompts/interviewer";
 import { callWithFallback, parseInterviewerResponse, ChatMessage } from "@/lib/openrouter";
 import { getNextSessionState, SessionContext } from "@/lib/fsm";
+import { classifyIntent } from "@/lib/intent-classifier";
+import { routeIntent, IntentContext } from "@/lib/intent-router";
 
 interface RouteParams {
   params: Promise<{ sessionId: string }>;
@@ -45,37 +47,107 @@ export async function POST(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: "Interview session not found" }, { status: 404 });
     }
 
-    // Determine current counts from past turns
-    const candidateTurns = session.turns.filter((t) => t.role === "candidate");
-    const candidateScores = candidateTurns
-      .map((t) => t.score)
-      .filter((s): s is number => typeof s === "number");
+    const candidateTurnText = answer.trim();
+    const isCodeSubmission = !!codeSnapshot;
+    const lastAiTurn = [...session.turns].reverse().find((t) => t.role === "ai");
+    const lastAiMessage = lastAiTurn?.content;
 
-    const coreQuestionsCount = session.turns.filter(
-      (t) => t.role === "ai" && !t.content.toLowerCase().includes("wrap") && !t.content.toLowerCase().includes("coding challenge")
-    ).length;
+    // ---------------------------------------------------------------------
+    // INTENT CLASSIFICATION (spec §7): decide whether this utterance is an
+    // actual answer to score, or a procedural request (repeat, hint, skip,
+    // "check my code", meta questions, etc.). Only ACTUAL_ANSWER goes through
+    // the full evaluation/scoring pipeline below.
+    // ---------------------------------------------------------------------
+    let intent = "ACTUAL_ANSWER";
+    if (!isCodeSubmission && !actionOverride) {
+      intent = await classifyIntent(candidateTurnText, lastAiMessage);
+    } else if (isCodeSubmission) {
+      intent = "ACTUAL_ANSWER";
+    }
 
-    const followUpsInCurrentState = session.turns.filter(
-      (t) => t.role === "candidate" && t.actionTaken === "follow_up"
-    ).length;
-
-    const currentFsmContext: SessionContext = {
-      state: session.state as any,
+    const intentContext: IntentContext = {
+      candidateName: session.candidateName || "Candidate",
       language: session.language,
-      difficulty: session.difficulty as any,
-      coreQuestionCount: Math.max(1, coreQuestionsCount),
-      maxCoreQuestions: session.difficulty === "senior" ? 5 : 4,
-      followUpCount: followUpsInCurrentState % 2,
-      maxFollowUpsPerQuestion: 2,
-      codingChallengeCount: session.state === "CODING_CHALLENGE" ? 1 : 0,
-      maxCodingChallenges: session.difficulty === "senior" ? 2 : 1,
-      totalTurns: session.turns.length,
-      runningScores: candidateScores,
-      averageScore:
-        candidateScores.length > 0
-          ? parseFloat((candidateScores.reduce((a, b) => a + b, 0) / candidateScores.length).toFixed(1))
-          : 7.5,
+      difficulty: session.difficulty,
+      currentState: session.state,
+      lastAiQuestion: lastAiMessage,
+      lastAiMessage,
+      questionCount: session.turns.filter((t) => t.role === "ai" && !t.content.toLowerCase().includes("wrap")).length,
+      codeSnapshot: codeSnapshot || undefined,
+      turnsCount: session.turns.length,
+      createdAt: session.createdAt,
     };
+
+    const outcome = await routeIntent(intent as any, intentContext);
+
+    // Procedural intent: no rubric scoring, no evaluation LLM call.
+    if (outcome.handled) {
+      const currentFsmContext = buildFsmContext(session);
+
+      // SKIP advances to the next topic; everything else stays put (follow_up).
+      const fsmResult = getNextSessionState(
+        currentFsmContext,
+        outcome.action === "advance" ? "advance" : "follow_up",
+        undefined
+      );
+
+      const savedCandidateTurn = await prisma.turn.create({
+        data: {
+          sessionId: session.id,
+          role: "candidate",
+          content: candidateTurnText || "(Procedural request)",
+          score: null,
+          evalNotes: outcome.notes,
+          actionTaken: outcome.action,
+          followUpType: outcome.followUpType,
+          skipped: outcome.action === "advance" && intent === "SKIP_REQUEST",
+          codeSnapshot: codeSnapshot || null,
+          stdinSnapshot: stdin || null,
+          stdoutSnapshot: stdout || null,
+          stderrSnapshot: stderr || null,
+          exitCodeSnapshot: typeof exitCode === "number" ? exitCode : null,
+        },
+      });
+
+      const savedAiTurn = await prisma.turn.create({
+        data: {
+          sessionId: session.id,
+          role: "ai",
+          content: outcome.message,
+          modelUsed: outcome.modelUsed || "intent-router",
+          actionTaken: fsmResult.actionExecuted,
+          followUpType: outcome.followUpType,
+        },
+      });
+
+      const updatedSession = await prisma.session.update({
+        where: { id: sessionId },
+        data: {
+          state: fsmResult.nextState,
+          status: fsmResult.nextState === "REPORT_GENERATED" || fsmResult.nextState === "WRAP_UP" ? "completed" : "in_progress",
+        },
+      });
+
+      return NextResponse.json({
+        session: updatedSession,
+        candidateTurn: savedCandidateTurn,
+        aiTurn: savedAiTurn,
+        intent,
+        procedural: true,
+        internalEvaluation: {
+          score: null,
+          notes: outcome.notes,
+          action: fsmResult.actionExecuted,
+          followUpType: outcome.followUpType,
+          nextState: fsmResult.nextState,
+        },
+      });
+    }
+
+    // ---------------------------------------------------------------------
+    // ACTUAL_ANSWER: full evaluation pipeline.
+    // ---------------------------------------------------------------------
+    const currentFsmContext = buildFsmContext(session);
 
     // Construct prompt with current state & candidate code context
     const systemPrompt = buildInterviewerPrompt({
@@ -211,4 +283,45 @@ export async function POST(req: Request, { params }: RouteParams) {
       { status: 500 }
     );
   }
+}
+
+function buildFsmContext(session: {
+  state: string;
+  language: string;
+  difficulty: string;
+  turns: { role: string; content: string; score: number | null; actionTaken: string | null }[];
+}): SessionContext {
+  const candidateTurns = session.turns.filter((t) => t.role === "candidate");
+  const candidateScores = candidateTurns
+    .map((t) => t.score)
+    .filter((s): s is number => typeof s === "number");
+
+  const coreQuestionsCount = session.turns.filter(
+    (t) =>
+      t.role === "ai" &&
+      !t.content.toLowerCase().includes("wrap") &&
+      !t.content.toLowerCase().includes("coding challenge")
+  ).length;
+
+  const followUpsInCurrentState = session.turns.filter(
+    (t) => t.role === "candidate" && t.actionTaken === "follow_up"
+  ).length;
+
+  return {
+    state: session.state as any,
+    language: session.language,
+    difficulty: session.difficulty as any,
+    coreQuestionCount: Math.max(1, coreQuestionsCount),
+    maxCoreQuestions: session.difficulty === "senior" ? 5 : 4,
+    followUpCount: followUpsInCurrentState % 2,
+    maxFollowUpsPerQuestion: 2,
+    codingChallengeCount: session.state === "CODING_CHALLENGE" ? 1 : 0,
+    maxCodingChallenges: session.difficulty === "senior" ? 2 : 1,
+    totalTurns: session.turns.length,
+    runningScores: candidateScores,
+    averageScore:
+      candidateScores.length > 0
+        ? parseFloat((candidateScores.reduce((a, b) => a + b, 0) / candidateScores.length).toFixed(1))
+        : 7.5,
+  };
 }

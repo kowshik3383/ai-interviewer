@@ -9,6 +9,7 @@ export interface CandidateTurnEvaluation {
   score?: number | null; // 0-10
   notes?: string | null;
   codeSnapshot?: string | null;
+  skipped?: boolean;
 }
 
 export interface RadarMetric {
@@ -67,7 +68,9 @@ export async function generateFinalReport(params: {
   difficulty: string;
   turns: CandidateTurnEvaluation[];
 }): Promise<EvaluationReport> {
-  const scoredTurns = params.turns.filter((t) => typeof t.score === "number" && t.score !== null);
+  const scoredTurns = params.turns.filter(
+    (t) => !t.skipped && typeof t.score === "number" && t.score !== null
+  );
   const avgScore =
     scoredTurns.length > 0
       ? scoredTurns.reduce((sum, t) => sum + (t.score || 0), 0) / scoredTurns.length

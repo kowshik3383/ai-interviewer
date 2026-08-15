@@ -75,6 +75,13 @@ export async function callWithFallback(opts: CallOptions): Promise<CallResult> {
 
         if (timeoutId) clearTimeout(timeoutId);
 
+        // Non-retry-worthy: 400 (bad request = prompt/config bug) and 401 (bad
+        // API key = config bug). Fail fast instead of burning through the chain.
+        if (res.status === 400 || res.status === 401) {
+          const errorText = await res.text().catch(() => "");
+          throw new Error(`OpenRouter ${res.status} (${errorText.slice(0, 200)})`);
+        }
+
         // Treat 429, 402, 404, 500, 502, 503, 504 as "try next model in chain"
         if ([429, 402, 404, 500, 502, 503, 504].includes(res.status)) {
           const errorText = await res.text().catch(() => "");
@@ -104,6 +111,12 @@ export async function callWithFallback(opts: CallOptions): Promise<CallResult> {
         if (timeoutId) clearTimeout(timeoutId);
         const isAbort = err?.name === "AbortError" || err?.message?.includes("aborted");
         const errMsg = isAbort ? "Request timed out" : err?.message || "Unknown network error";
+
+        // Fail fast on non-retry-worthy config errors (bad request / bad API key).
+        if (!isAbort && /OpenRouter 40[01]/.test(err?.message || "")) {
+          throw err;
+        }
+
         errors.push({ model: model.id, error: errMsg });
         continue;
       }

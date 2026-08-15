@@ -52,5 +52,6 @@ model Turn {
   stdoutSnapshot String?
   stderrSnapshot String?
   exitCodeSnapshot Int?
+  skipped       Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
