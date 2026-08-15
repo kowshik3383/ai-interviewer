@@ -34,19 +34,19 @@ export async function GET(req: Request, { params }: RouteParams) {
         const scoredTurns = session.turns.filter((t) => t.role === "candidate");
 
         const radarMetrics: RadarMetric[] = [
-          { category: "Correctness", score: categoryScores.correctness || 80, fullMark: 100 },
-          { category: "Depth & Internals", score: categoryScores.depth || 75, fullMark: 100 },
-          { category: "Communication", score: categoryScores.communication || 85, fullMark: 100 },
-          { category: "Problem Solving", score: categoryScores.problemSolving || 80, fullMark: 100 },
-          { category: "Code Quality", score: categoryScores.codeQuality || 78, fullMark: 100 },
+          { category: "Correctness", score: categoryScores.correctness ?? 0, fullMark: 100 },
+          { category: "Depth & Internals", score: categoryScores.depth ?? 0, fullMark: 100 },
+          { category: "Communication", score: categoryScores.communication ?? 0, fullMark: 100 },
+          { category: "Problem Solving", score: categoryScores.problemSolving ?? 0, fullMark: 100 },
+          { category: "Code Quality", score: categoryScores.codeQuality ?? 0, fullMark: 100 },
         ];
 
         const report: EvaluationReport = {
           candidateName: session.candidateName || "Candidate",
           language: session.language,
           difficulty: session.difficulty,
-          finalScore: session.finalScore ?? 80,
-          overallScore: session.finalScore ?? 80,
+          finalScore: session.finalScore ?? 0,
+          overallScore: session.finalScore ?? 0,
           recommendation: session.recommendation,
           executiveSummary: session.summary,
           summary: session.summary,

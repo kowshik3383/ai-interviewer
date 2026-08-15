@@ -71,7 +71,7 @@ export async function generateFinalReport(params: {
   const avgScore =
     scoredTurns.length > 0
       ? scoredTurns.reduce((sum, t) => sum + (t.score || 0), 0) / scoredTurns.length
-      : 7.5;
+      : 0;
 
   const normalized100 = Math.min(100, Math.max(0, Math.round(avgScore * 10)));
 

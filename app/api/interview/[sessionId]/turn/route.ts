@@ -131,13 +131,16 @@ export async function POST(req: Request, { params }: RouteParams) {
     });
 
     const parsed = parseInterviewerResponse(aiResult.content);
-    const score = parsed.internal_evaluation?.score ?? 7;
-    const suggestedAction = actionOverride || parsed.internal_evaluation?.action || "advance";
-    const followUpType = parsed.internal_evaluation?.follow_up_type || "AFFIRM_AND_ADVANCE";
-    const evalNotes = parsed.internal_evaluation?.notes || "Candidate answer evaluated.";
+    const hasEval = !!parsed.internal_evaluation;
+    const score = hasEval && parsed.internal_evaluation?.score != null ? parsed.internal_evaluation.score : null;
+    const suggestedAction = actionOverride || (hasEval ? parsed.internal_evaluation?.action : "follow_up") || "advance";
+    const followUpType = hasEval ? parsed.internal_evaluation?.follow_up_type || "AFFIRM_AND_ADVANCE" : "REDIRECT";
+    const evalNotes = hasEval
+      ? parsed.internal_evaluation?.notes || "Candidate answer evaluated."
+      : "Model response could not be structurally evaluated; treated as a clarification turn.";
 
-    // Execute state machine transition
-    const fsmResult = getNextSessionState(currentFsmContext, suggestedAction, score);
+    // Execute state machine transition (null score = not scored; don't add to running scores)
+    const fsmResult = getNextSessionState(currentFsmContext, suggestedAction, score ?? undefined);
 
     // Save Candidate Turn in DB
     const savedCandidateTurn = await prisma.turn.create({
