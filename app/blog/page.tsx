@@ -8,6 +8,8 @@ import { getAllPosts } from "@/lib/blog";
 import { SUPPORTED_LANGUAGES } from "@/lib/prompts/question-banks";
 import { ArrowRight } from "lucide-react";
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+
 export const metadata: Metadata = {
   title: "Interview Prep Guides & Tech Deep-Dives | AI Technical Interviewer",
   description:
@@ -20,11 +22,15 @@ export const metadata: Metadata = {
     "SQL interview",
     "interview scorecard",
   ],
+  alternates: {
+    canonical: "/blog",
+  },
   openGraph: {
-    title: "Interview Prep Guides & Tech Deep-Dives",
+    title: "Interview Prep Guides & Tech Deep-Dives | AI Technical Interviewer",
     description:
       "30+ guides on technical interview questions, scoring rubrics, and career advice.",
     type: "website",
+    url: `${SITE_URL}/blog`,
   },
 };
 

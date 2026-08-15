@@ -9,6 +9,8 @@ import TableOfContents from "@/components/blog/TableOfContents";
 import RelatedPosts from "@/components/blog/RelatedPosts";
 import { getPost, getAllPosts, getRelatedPosts, formatDate, languageName } from "@/lib/blog";
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -32,6 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: post.title,
       description: post.description,
       type: "article",
+      url: `${SITE_URL}/blog/${post.slug}`,
       publishedTime: post.date,
       modifiedTime: post.updated,
       tags: post.tags,
@@ -47,7 +50,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
   const post = getPost(slug);
-  if (!post) notFound();
+  if (!post) {
+    notFound();
+    return null;
+  }
 
   const related = getRelatedPosts(post, 3);
   const lang = languageName(post.language);
@@ -60,7 +66,7 @@ export default async function BlogPostPage({ params }: PageProps) {
     datePublished: post.date,
     dateModified: post.updated,
     inLanguage: "en",
-    mainEntityOfPage: `https://ai-interviewer.app/blog/${post.slug}`,
+    mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
     about: post.language ? `${lang} technical interview` : "technical interview",
   };
 

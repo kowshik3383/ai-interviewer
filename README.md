@@ -6,6 +6,8 @@ Practices you across **9 programming languages** and **3 difficulty levels** —
 
 [![Next.js 16](https://img.shields.io/badge/Next.js-16.x-black)](https://nextjs.org) [![React 19](https://img.shields.io/badge/React-19.2-blue)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org) [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8)](https://tailwindcss.com) [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748)](https://www.prisma.io) [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)]()
 
+🌐 **Live Deployment**: [https://ai-interviewer-ten-delta.vercel.app/](https://ai-interviewer-ten-delta.vercel.app/)
+
 ---
 
 ## ⚡ Highlights

@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ai-interviewer.app"),
+  metadataBase: new URL(SITE_URL),
   title: "AI Technical Interviewer | Adaptive Multi-Language Engineering Evaluations",
   description:
     "Conduct realistic, adaptive technical interviews in HTML, CSS, JavaScript, Python, Java, C, C++, C#, and SQL with real-time evaluation, sandbox code execution, and comprehensive hiring scorecards.",
@@ -18,6 +20,24 @@ export const metadata: Metadata = {
     "System Design",
     "Hiring Scorecard",
   ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "AI Technical Interviewer | Adaptive Multi-Language Engineering Evaluations",
+    description:
+      "Conduct realistic, adaptive technical interviews in HTML, CSS, JavaScript, Python, Java, C, C++, C#, and SQL with real-time evaluation, sandbox code execution, and comprehensive hiring scorecards.",
+    url: SITE_URL,
+    siteName: "AI Technical Interviewer",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Technical Interviewer | Adaptive Multi-Language Engineering Evaluations",
+    description:
+      "Conduct realistic, adaptive technical interviews in HTML, CSS, JavaScript, Python, Java, C, C++, C#, and SQL with real-time evaluation, sandbox code execution, and comprehensive hiring scorecards.",
+  },
 };
 
 export default function RootLayout({

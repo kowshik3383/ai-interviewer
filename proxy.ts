@@ -3,7 +3,7 @@ import { auth } from "./auth";
 
 const PUBLIC_ROUTES = ["/login"];
 
-export default auth((req) => {
+export default auth((req: any) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const isPublic = PUBLIC_ROUTES.some((r) => nextUrl.pathname.startsWith(r));
