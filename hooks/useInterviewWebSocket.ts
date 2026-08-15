@@ -39,17 +39,21 @@ export function useInterviewWebSocket({
   const playSpeechAudio = useCallback((text: string, audioBase64?: string | null) => {
     if (typeof window === "undefined") return;
 
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
     if (audioBase64) {
       try {
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
         const audio = new Audio(audioBase64);
         audioRef.current = audio;
         setIsAudioPlaying(true);
         audio.onended = () => setIsAudioPlaying(false);
         audio.onerror = () => {
-          // If Base64 playback fails, fallback to speech synthesis
           fallbackSpeechSynthesis(text);
         };
         audio.play().catch(() => fallbackSpeechSynthesis(text));

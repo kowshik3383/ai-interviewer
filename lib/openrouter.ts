@@ -75,20 +75,15 @@ export async function callWithFallback(opts: CallOptions): Promise<CallResult> {
 
         if (timeoutId) clearTimeout(timeoutId);
 
-        // Non-retry-worthy: 400 (bad request = prompt/config bug) and 401 (bad
-        // API key = config bug). Fail fast instead of burning through the chain.
-        if (res.status === 400 || res.status === 401) {
+        // If unauthorized (bad API key), log warning and drop to offline fallback
+        if (res.status === 401) {
           const errorText = await res.text().catch(() => "");
-          throw new Error(`OpenRouter ${res.status} (${errorText.slice(0, 200)})`);
+          errors.push({ model: model.id, error: `HTTP 401 Unauthorized: ${errorText.slice(0, 120)}` });
+          console.warn(`[OpenRouter 401]: API key unauthorized or expired. Falling back to offline engine.`);
+          break;
         }
 
-        // Treat 429, 402, 404, 500, 502, 503, 504 as "try next model in chain"
-        if ([429, 402, 404, 500, 502, 503, 504].includes(res.status)) {
-          const errorText = await res.text().catch(() => "");
-          errors.push({ model: model.id, error: `HTTP ${res.status}: ${errorText.slice(0, 120)}` });
-          continue;
-        }
-
+        // For any other non-OK status (400 invalid model ID, 402 no credits, 429 rate limit, 5xx), try next model
         if (!res.ok) {
           const errorText = await res.text().catch(() => "");
           errors.push({ model: model.id, error: `HTTP ${res.status}: ${errorText.slice(0, 120)}` });
@@ -111,11 +106,6 @@ export async function callWithFallback(opts: CallOptions): Promise<CallResult> {
         if (timeoutId) clearTimeout(timeoutId);
         const isAbort = err?.name === "AbortError" || err?.message?.includes("aborted");
         const errMsg = isAbort ? "Request timed out" : err?.message || "Unknown network error";
-
-        // Fail fast on non-retry-worthy config errors (bad request / bad API key).
-        if (!isAbort && /OpenRouter 40[01]/.test(err?.message || "")) {
-          throw err;
-        }
 
         errors.push({ model: model.id, error: errMsg });
         continue;

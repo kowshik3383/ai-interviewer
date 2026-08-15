@@ -108,12 +108,26 @@ export default function ChatContainer({
     }
   }, [isRecording]);
 
+  // Cleanly stop all playing audio and speech synthesis
+  const stopAllAudio = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
+
   // Handle Speech Output (Shunya Labs Voice with browser fallback)
   const speakText = useCallback(
     async (text: string, onEndedCallback?: () => void) => {
       if (typeof window === "undefined") return;
 
       stopListening();
+      stopAllAudio();
       setIsSpeaking(true);
 
       try {
@@ -126,11 +140,11 @@ export default function ChatContainer({
         if (res.ok) {
           const data = await res.json();
           if (data.audioBase64) {
-            if (audioPlayerRef.current) audioPlayerRef.current.pause();
             const audio = new Audio(data.audioBase64);
             audioPlayerRef.current = audio;
             audio.onended = () => {
               setIsSpeaking(false);
+              audioPlayerRef.current = null;
               onEndedCallback?.();
             };
             audio.onerror = () => {
@@ -146,16 +160,17 @@ export default function ChatContainer({
 
       fallbackSpeak(text, onEndedCallback);
     },
-    [stopListening]
+    [stopListening, stopAllAudio]
   );
 
   const fallbackSpeak = (text: string, onEndedCallback?: () => void) => {
-    if ("speechSynthesis" in window) {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const cleanText = text.replace(/```[\s\S]*?```/g, "Code written in the editor.");
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.rate = 1.0;
       utterance.pitch = 1.0;
+      utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => {
         setIsSpeaking(false);
         onEndedCallback?.();
@@ -233,21 +248,21 @@ export default function ChatContainer({
 
   // When a new AI message arrives, speak it out loud automatically like a phone call
   const lastTurn = turns[turns.length - 1];
-  const lastTurnIdRef = useRef<string | null>(null);
+  const lastSpokenTurnIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!lastTurn || lastTurn.role !== "ai") return;
-    const currentId = lastTurn.id || `${turns.length}-${lastTurn.content.slice(0, 20)}`;
+    if (!lastTurn || lastTurn.role !== "ai" || isLoading) return;
+    const currentId = lastTurn.id || `${turns.length}-${lastTurn.content.slice(0, 30)}`;
 
-    if (lastTurnIdRef.current !== currentId && !isLoading) {
-      lastTurnIdRef.current = currentId;
+    if (lastSpokenTurnIdRef.current !== currentId) {
+      lastSpokenTurnIdRef.current = currentId;
 
       // Speak AI response, then automatically open mic for candidate response like a phone call
       speakText(lastTurn.content, () => {
         if (isCallActive) {
           setTimeout(() => {
             startListening();
-          }, 400);
+          }, 350);
         }
       });
     }
@@ -258,10 +273,7 @@ export default function ChatContainer({
       stopListening();
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     } else {
-      if (isSpeaking && audioPlayerRef.current) {
-        audioPlayerRef.current.pause();
-        setIsSpeaking(false);
-      }
+      stopAllAudio();
       startListening();
     }
   };
@@ -273,6 +285,7 @@ export default function ChatContainer({
 
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     stopListening();
+    stopAllAudio();
     setInputText("");
     setLiveTranscript("");
     await onSendMessage(textToSend);
@@ -282,25 +295,26 @@ export default function ChatContainer({
     if (isLoading) return;
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     stopListening();
+    stopAllAudio();
     await onSendMessage(prompt);
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#ffffff] rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden relative">
+    <div className="flex flex-col h-full min-h-0 bg-[#ffffff] rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden relative">
       {/* Phone Call Status Bar */}
-      <div className="flex items-center justify-between px-5 py-3.5 bg-[#f7f5f2] border-b border-[#e8e5e0]">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#f7f5f2] border-b border-[#e8e5e0] shrink-0">
+        <div className="flex items-center gap-2.5">
           <div className="relative">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1b1b1b] text-[#fffafa] shadow-2xs">
-              <PhoneCall className="h-5 w-5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#1b1b1b] text-[#fffafa] shadow-2xs">
+              <PhoneCall className="h-4 w-4" />
             </div>
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-600 ring-2 ring-[#ffffff]"></span>
+            <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-600 ring-2 ring-[#ffffff]"></span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#1b1b1b] flex items-center gap-2">
+            <h3 className="text-xs font-bold text-[#1b1b1b] flex items-center gap-1.5">
               <span>Technical Lead Interviewer</span>
             </h3>
-            <div className="flex items-center gap-2 text-[11px] text-[#71717a]">
+            <div className="flex items-center gap-1.5 text-[10px] text-[#71717a]">
               <span className="font-mono text-[#059669] font-bold">
                 {formatDuration(callDuration)}
               </span>
@@ -319,24 +333,24 @@ export default function ChatContainer({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowTextInput(!showTextInput)}
-            className={`p-2 rounded-xl text-xs font-semibold transition-all border ${
+            className={`p-1.5 rounded-xl text-xs font-semibold transition-all border ${
               showTextInput
                 ? "bg-[#1b1b1b] text-[#fffafa] border-[#1b1b1b]"
                 : "bg-[#ffffff] text-[#71717a] hover:text-[#1b1b1b] border-[#e8e5e0]"
             }`}
             title="Toggle keyboard text input"
           >
-            <Keyboard className="h-4 w-4" />
+            <Keyboard className="h-3.5 w-3.5" />
           </button>
 
           {onWrapUpEarly && (
             <button
               onClick={onWrapUpEarly}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-[#e11d48] bg-[#fff1f2] hover:bg-[#ffe4e6] rounded-xl border border-[#fecdd3] transition-all active:scale-[0.98]"
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#e11d48] bg-[#fff1f2] hover:bg-[#ffe4e6] rounded-xl border border-[#fecdd3] transition-all active:scale-[0.98]"
               title="End meeting and generate scorecard"
             >
-              <PhoneOff className="h-3.5 w-3.5" />
+              <PhoneOff className="h-3 w-3" />
               <span>End Meet</span>
             </button>
           )}
@@ -344,7 +358,7 @@ export default function ChatContainer({
       </div>
 
       {/* Messages / Conversation Transcript */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#fffafa] pb-24">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3.5 py-3 space-y-3 bg-[#fffafa]">
         {turns.map((turn, idx) => {
           const isAi = turn.role === "ai";
           const turnId = turn.id || `turn-${idx}`;
@@ -355,40 +369,40 @@ export default function ChatContainer({
               className={`flex flex-col ${isAi ? "items-start" : "items-end"} space-y-1`}
             >
               {/* Sender Name */}
-              <div className="flex items-center gap-1.5 px-1 text-[11px] font-semibold text-[#71717a]">
+              <div className="flex items-center gap-1 px-1 text-[10px] font-semibold text-[#71717a]">
                 {isAi ? (
                   <>
-                    <Bot className="h-3.5 w-3.5 text-[#2563eb]" />
+                    <Bot className="h-3 w-3 text-[#2563eb]" />
                     <span className="text-[#1b1b1b]">Interviewer</span>
                   </>
                 ) : (
                   <>
                     <span className="text-[#1b1b1b]">{candidateName}</span>
-                    <User className="h-3.5 w-3.5 text-[#059669]" />
+                    <User className="h-3 w-3 text-[#059669]" />
                   </>
                 )}
               </div>
 
               {/* Speech Bubble */}
               <div
-                className={`group relative max-w-[90%] sm:max-w-[84%] rounded-2xl p-4 text-sm leading-relaxed shadow-2xs transition-all ${
+                className={`group relative max-w-[92%] sm:max-w-[88%] rounded-2xl p-3 text-xs sm:text-sm leading-relaxed shadow-2xs transition-all ${
                   isAi
                     ? "bg-[#ffffff] text-[#1b1b1b] border border-[#e8e5e0] rounded-tl-xs"
                     : "bg-[#1b1b1b] text-[#fffafa] rounded-tr-xs shadow-sm"
                 }`}
               >
-                <div className="whitespace-pre-wrap font-sans text-sm">
+                <div className="whitespace-pre-wrap font-sans">
                   {turn.content}
                 </div>
 
                 {isAi && (
-                  <div className="mt-2.5 flex items-center justify-between border-t border-[#f0ede8] pt-2 text-xs">
+                  <div className="mt-2 flex items-center justify-between border-t border-[#f0ede8] pt-1.5 text-xs">
                     <button
                       onClick={() => speakText(turn.content)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-[#71717a] hover:text-[#1b1b1b] transition-colors"
+                      className="flex items-center gap-1 text-[10px] font-semibold text-[#71717a] hover:text-[#1b1b1b] transition-colors"
                       title="Replay speech audio"
                     >
-                      <Volume2 className="h-3.5 w-3.5 text-[#2563eb]" />
+                      <Volume2 className="h-3 w-3 text-[#2563eb]" />
                       <span>Replay Voice</span>
                     </button>
                   </div>
@@ -401,11 +415,11 @@ export default function ChatContainer({
         {/* Live Interim Transcript when Candidate is Speaking */}
         {isRecording && liveTranscript && (
           <div className="flex flex-col items-end space-y-1 animate-in fade-in duration-200">
-            <div className="flex items-center gap-1.5 px-1 text-[11px] font-semibold text-[#059669]">
+            <div className="flex items-center gap-1 px-1 text-[10px] font-semibold text-[#059669]">
               <span className="h-2 w-2 rounded-full bg-[#059669] animate-pulse" />
               <span>Speaking live...</span>
             </div>
-            <div className="max-w-[84%] rounded-2xl rounded-tr-xs bg-[#f4f2ee] text-[#1b1b1b] border border-[#e8e5e0] p-4 text-sm shadow-2xs italic">
+            <div className="max-w-[88%] rounded-2xl rounded-tr-xs bg-[#f4f2ee] text-[#1b1b1b] border border-[#e8e5e0] p-3 text-xs shadow-2xs italic">
               &ldquo;{liveTranscript}&rdquo;
             </div>
           </div>
@@ -414,11 +428,11 @@ export default function ChatContainer({
         {/* AI Analyzing Indicator */}
         {isLoading && (
           <div className="flex flex-col items-start space-y-1">
-            <div className="flex items-center gap-2 rounded-2xl rounded-tl-xs bg-[#ffffff] border border-[#e8e5e0] px-4 py-3 text-[#52525b] shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-[#1b1b1b] animate-bounce"></span>
-              <span className="h-2 w-2 rounded-full bg-[#1b1b1b] animate-bounce [animation-delay:0.2s]"></span>
-              <span className="h-2 w-2 rounded-full bg-[#1b1b1b] animate-bounce [animation-delay:0.4s]"></span>
-              <span className="text-xs ml-1 font-medium">Interviewer is listening & analyzing...</span>
+            <div className="flex items-center gap-2 rounded-2xl rounded-tl-xs bg-[#ffffff] border border-[#e8e5e0] px-3.5 py-2 text-[#52525b] shadow-2xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1b1b1b] animate-bounce"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1b1b1b] animate-bounce [animation-delay:0.2s]"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1b1b1b] animate-bounce [animation-delay:0.4s]"></span>
+              <span className="text-[11px] ml-1 font-medium">Interviewer is analyzing...</span>
             </div>
           </div>
         )}
@@ -427,12 +441,12 @@ export default function ChatContainer({
       </div>
 
       {/* Suggested Quick Conversational Chips */}
-      <div className="px-4 py-2 bg-[#f7f5f2] border-t border-[#e8e5e0] flex items-center gap-2 overflow-x-auto text-xs">
+      <div className="px-3 py-1.5 bg-[#f7f5f2] border-t border-[#e8e5e0] flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0">
         <button
           type="button"
           onClick={() => handleQuickAction("Could you please repeat the question or explain with an example?")}
           disabled={isLoading}
-          className="whitespace-nowrap px-3 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[11px] font-medium transition-colors flex items-center gap-1 shadow-2xs"
+          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[10px] font-medium transition-colors flex items-center gap-1 shadow-2xs shrink-0"
         >
           <HelpCircle className="h-3 w-3 text-[#2563eb]" />
           <span>Could you repeat that?</span>
@@ -441,7 +455,7 @@ export default function ChatContainer({
           type="button"
           onClick={() => onRequestHint ? onRequestHint() : handleQuickAction("Can you give me a slight hint on the approach?")}
           disabled={isLoading}
-          className="whitespace-nowrap px-3 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[11px] font-medium transition-colors flex items-center gap-1 shadow-2xs"
+          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[10px] font-medium transition-colors flex items-center gap-1 shadow-2xs shrink-0"
         >
           <Lightbulb className="h-3 w-3 text-[#d97706]" />
           <span>Request Hint</span>
@@ -450,34 +464,36 @@ export default function ChatContainer({
           type="button"
           onClick={() => handleQuickAction("I'm finished with my answer and ready for the next topic.")}
           disabled={isLoading}
-          className="whitespace-nowrap px-3 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[11px] font-medium transition-colors flex items-center gap-1 shadow-2xs"
+          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#ffffff] hover:bg-[#ebe8e1] text-[#1b1b1b] border border-[#e8e5e0] text-[10px] font-medium transition-colors flex items-center gap-1 shadow-2xs shrink-0"
         >
           <ArrowRight className="h-3 w-3 text-[#059669]" />
           <span>Ready for Next Topic</span>
         </button>
       </div>
 
-      {/* Optional Manual Text Input Drawer */}
+      {/* Optional Text Input Drawer */}
       {showTextInput && (
-        <form
-          onSubmit={handleManualSend}
-          className="w-full p-3 bg-[#ffffff] border-t border-[#e8e5e0] flex items-center gap-2 animate-in fade-in duration-200"
-        >
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Or type your response here..."
-            className="flex-1 rounded-xl bg-[#f7f5f2] border border-[#e8e5e0] px-3.5 py-2.5 text-xs text-[#1b1b1b] placeholder-[#8c8a82] focus:border-[#1b1b1b] focus:bg-[#ffffff] focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={!inputText.trim() || isLoading}
-            className="px-4 py-2.5 rounded-xl bg-[#1b1b1b] text-[#fffafa] text-xs font-bold hover:bg-[#333333] disabled:opacity-50 transition-all"
+        <div className="p-2.5 bg-[#ffffff] border-t border-[#e8e5e0] shrink-0">
+          <form
+            onSubmit={handleManualSend}
+            className="w-full flex items-center gap-1.5 animate-in fade-in duration-200"
           >
-            Send
-          </button>
-        </form>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type your response here..."
+              className="flex-1 rounded-xl bg-[#f7f5f2] border border-[#e8e5e0] px-3 py-2 text-xs text-[#1b1b1b] placeholder-[#8c8a82] focus:border-[#1b1b1b] focus:bg-[#ffffff] focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={!inputText.trim() || isLoading}
+              className="px-3.5 py-2 rounded-xl bg-[#1b1b1b] text-[#fffafa] text-xs font-bold hover:bg-[#333333] disabled:opacity-50 transition-all shrink-0"
+            >
+              Send
+            </button>
+          </form>
+        </div>
       )}
 
       {/* FIXED BOTTOM-RIGHT CORNER: Tap to Speak Answer / Voice Mic Controller */}
@@ -512,9 +528,10 @@ export default function ChatContainer({
           )}
         </button>
 
-        {/* Quick Send button if candidate has spoken words */}
+        {/* Quick Send button if candidate has spoken words or typed */}
         {(liveTranscript || inputText) && !isLoading && (
           <button
+            type="button"
             onClick={() => handleManualSend()}
             className="flex items-center gap-1.5 px-4 py-3 rounded-full bg-[#059669] hover:bg-[#047857] text-[#fffafa] text-xs font-bold shadow-md transition-all active:scale-[0.98]"
             title="Send spoken answer now"

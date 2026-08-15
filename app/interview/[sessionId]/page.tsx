@@ -132,11 +132,6 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
         data.aiTurn,
       ]);
 
-      // Play AI response audio with Shunya Labs Voice
-      if (data.aiTurn?.content) {
-        playSpeechAudio(data.aiTurn.content);
-      }
-
       if (data.session?.state === "REPORT_GENERATED") {
         router.push(`/interview/${sessionId}/report`);
       }
@@ -223,11 +218,6 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
         data.aiTurn,
       ]);
 
-      // Play AI evaluation audio
-      if (data.aiTurn?.content) {
-        playSpeechAudio(data.aiTurn.content);
-      }
-
       if (data.session?.state === "REPORT_GENERATED") {
         router.push(`/interview/${sessionId}/report`);
       }
@@ -249,7 +239,7 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fffafa] text-[#1b1b1b]">
+      <div className="h-screen flex items-center justify-center bg-[#fffafa] text-[#1b1b1b]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-[#1b1b1b] border-t-transparent animate-spin" />
           <p className="text-xs text-[#71717a] font-mono">Loading interview workspace...</p>
@@ -260,7 +250,7 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fffafa] text-[#1b1b1b] p-4 space-y-4">
+      <div className="h-screen flex flex-col items-center justify-center bg-[#fffafa] text-[#1b1b1b] p-4 space-y-4">
         <AlertCircle className="h-10 w-10 text-[#e11d48]" />
         <h2 className="text-xl font-bold">Interview Session Not Found</h2>
         <Link
@@ -276,39 +266,39 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
   const isWrapUp = session.state === "WRAP_UP" || session.state === "REPORT_GENERATED";
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fffafa] text-[#1b1b1b]">
+    <div className="h-screen max-h-screen overflow-hidden flex flex-col bg-[#fffafa] text-[#1b1b1b]">
       <Header
         sessionState={session.state}
         language={session.language}
         candidateName={session.candidateName || "Candidate"}
       />
 
-      {/* Main Workspace */}
-      <main className="flex-1 max-w-[1700px] w-full mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col gap-4">
+      {/* Main Workspace - 1 Fold Desktop Layout */}
+      <main className="flex-1 min-h-0 w-full px-2 sm:px-3 lg:px-4 py-2.5 flex flex-col gap-2.5 overflow-hidden">
         {/* Wrap Up Ready Banner */}
         {isWrapUp && (
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46]">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] text-[#065f46] shrink-0">
             <div className="flex items-center gap-2.5">
-              <Award className="h-5 w-5 text-[#059669]" />
+              <Award className="h-4 w-4 text-[#059669]" />
               <div>
-                <h4 className="text-sm font-bold text-[#065f46]">Interview Concluded</h4>
-                <p className="text-xs text-[#047857]">
+                <h4 className="text-xs font-bold text-[#065f46]">Interview Concluded</h4>
+                <p className="text-[11px] text-[#047857]">
                   Your responses and code evaluations have been recorded. You can view your full hiring report.
                 </p>
               </div>
             </div>
             <Link
               href={`/interview/${sessionId}/report`}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-[#ffffff] font-semibold text-xs shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#059669] hover:bg-[#047857] text-[#ffffff] font-semibold text-xs shadow-sm transition-all"
             >
               <span>View Scorecard</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         )}
 
         {/* View Mode Toggle (Mobile / Small Screens) */}
-        <div className="flex lg:hidden items-center justify-center p-1 bg-[#f7f5f2] rounded-xl border border-[#e8e5e0] self-center">
+        <div className="flex lg:hidden items-center justify-center p-1 bg-[#f7f5f2] rounded-xl border border-[#e8e5e0] self-center shrink-0">
           <button
             onClick={() => setActiveTab("chat")}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -329,11 +319,11 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
           </button>
         </div>
 
-        {/* Split Grid Layout (Chat on Left, Editor on Right) */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-140px)] min-h-[600px]">
+        {/* Split Grid Layout (Chat on Left, Editor on Right) - Fill exactly 1 fold */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 h-full overflow-hidden">
           {/* Left: Chat Container */}
           <div
-            className={`lg:col-span-5 h-full ${
+            className={`lg:col-span-5 xl:col-span-5 h-full min-h-0 overflow-hidden ${
               activeTab === "editor" ? "hidden lg:block" : "block"
             }`}
           >
@@ -352,7 +342,7 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
 
           {/* Right: Monaco Code Editor & Terminal */}
           <div
-            className={`lg:col-span-7 h-full ${
+            className={`lg:col-span-7 xl:col-span-7 h-full min-h-0 overflow-hidden ${
               activeTab === "chat" ? "hidden lg:block" : "block"
             }`}
           >

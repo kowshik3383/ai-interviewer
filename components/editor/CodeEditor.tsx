@@ -58,6 +58,11 @@ export default function CodeEditor({
   const [showStdin, setShowStdin] = useState(false);
   const [executionResult, setExecutionResult] = useState<SandboxExecutionResponse | null>(null);
   const [fontSize, setFontSize] = useState(14);
+  const [terminalHeight, setTerminalHeight] = useState(200);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+  const startHeightRef = useRef(200);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync initialCode if changed
@@ -66,6 +71,40 @@ export default function CodeEditor({
       setCode(initialCode);
     }
   }, [initialCode, code]);
+
+  // Draggable resize handler for terminal height
+  const handleMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    startYRef.current = e.clientY;
+    startHeightRef.current = terminalHeight;
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = startYRef.current - e.clientY;
+      const containerHeight = containerRef.current?.clientHeight || 600;
+      const minHeight = 44; // Allow collapsing down to header
+      const maxHeight = Math.max(minHeight, containerHeight - 120);
+
+      const newHeight = Math.min(Math.max(startHeightRef.current + deltaY, minHeight), maxHeight);
+      setTerminalHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
 
   // Handle live code changes with debouncing
   const handleEditorChange = (newVal: string | undefined) => {
@@ -108,7 +147,16 @@ export default function CodeEditor({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#ffffff] rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden relative">
+    <div
+      ref={containerRef}
+      className={`flex flex-col h-full min-h-0 bg-[#ffffff] rounded-2xl border border-[#e8e5e0] shadow-sm overflow-hidden relative ${
+        isDragging ? "select-none" : ""
+      }`}
+    >
+      {/* Dragging Overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 cursor-row-resize select-none" />
+      )}
       {/* Editor Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-[#f7f5f2] border-b border-[#e8e5e0]">
         <div className="flex items-center gap-2.5">
@@ -255,7 +303,7 @@ export default function CodeEditor({
       )}
 
       {/* Monaco Editor Pane */}
-      <div className="flex-1 min-h-[300px]">
+      <div className="flex-1 min-h-0 relative w-full">
         <Editor
           height="100%"
           language={langConfig.monacoLang || "javascript"}
@@ -271,13 +319,33 @@ export default function CodeEditor({
             tabSize: 2,
             wordWrap: "on",
             suggestOnTriggerCharacters: true,
-            padding: { top: 12, bottom: 12 },
+            padding: { top: 10, bottom: 10 },
           }}
         />
       </div>
 
-      {/* Output Console (Bottom Half) */}
-      <div className="h-[220px]">
+      {/* Draggable Resize Handle between Monaco Editor and Terminal Output */}
+      <div
+        onMouseDown={handleMouseDownResize}
+        className={`group relative h-2 -my-1 z-30 cursor-row-resize flex items-center justify-center select-none transition-colors ${
+          isDragging ? "bg-[#2563eb]" : "hover:bg-[#2563eb]/20"
+        }`}
+        title="Drag up or down to resize Terminal Output"
+      >
+        <div
+          className={`h-1 w-12 rounded-full transition-all ${
+            isDragging
+              ? "bg-[#2563eb] scale-x-125"
+              : "bg-[#cbd5e1] group-hover:bg-[#2563eb]"
+          }`}
+        />
+      </div>
+
+      {/* Output Console (Resizable Bottom Section) */}
+      <div
+        style={{ height: `${terminalHeight}px` }}
+        className="shrink-0 min-h-0 flex flex-col"
+      >
         <OutputConsole
           executionResult={executionResult}
           isRunning={isRunning}
