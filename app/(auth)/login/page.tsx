@@ -1,33 +1,20 @@
 "use client";
 
 // app/(auth)/login/page.tsx
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Terminal, User, Mail, ArrowRight } from "lucide-react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { Terminal } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [name, setName] = useState("Kowshik");
-  const [email, setEmail] = useState("kowshik@example.com");
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGuestLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("ai_interviewer_candidate_name", name.trim());
-        localStorage.setItem("ai_interviewer_candidate_email", email.trim());
-      }
-      router.push("/dashboard");
-    } catch (err) {
-      console.error("Login error:", err);
-    } finally {
-      setIsLoading(false);
-    }
+    await signIn("google", { callbackUrl });
   };
 
   return (
@@ -48,55 +35,34 @@ export default function LoginPage() {
       {/* Card */}
       <div className="w-full max-w-md bg-[#ffffff] rounded-2xl border border-[#e8e5e0] p-8 shadow-sm space-y-6">
         <div className="space-y-1">
-          <h2 className="text-lg font-extrabold text-[#1b1b1b]">Candidate Sign In</h2>
-          <p className="text-xs text-[#52525b]">Personalize your interviewer greeting and evaluation logs</p>
+          <h2 className="text-lg font-extrabold text-[#1b1b1b]">Sign In</h2>
+          <p className="text-xs text-[#52525b]">Sign in with Google to run and save your technical interviews</p>
         </div>
 
-        <form onSubmit={handleGuestLogin} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#1b1b1b] flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 text-[#2563eb]" />
-              <span>Full Name</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Kowshik"
-              className="w-full rounded-xl bg-[#f7f5f2] border border-[#e8e5e0] px-4 py-3 text-sm text-[#1b1b1b] placeholder-[#8c8a82] focus:border-[#1b1b1b] focus:outline-none focus:bg-[#ffffff]"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#1b1b1b] flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5 text-[#2563eb]" />
-              <span>Email Address</span>
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="kowshik@example.com"
-              className="w-full rounded-xl bg-[#f7f5f2] border border-[#e8e5e0] px-4 py-3 text-sm text-[#1b1b1b] placeholder-[#8c8a82] focus:border-[#1b1b1b] focus:outline-none focus:bg-[#ffffff]"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !name.trim()}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#1b1b1b] hover:bg-[#333333] text-[#fffafa] font-semibold text-sm shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            <span>{isLoading ? "Signing in..." : "Continue to Dashboard"}</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl bg-[#1b1b1b] hover:bg-[#333333] text-[#fffafa] font-semibold text-sm shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#fff" d="M21.35 11.1H12v3.85h5.45c-.55 2.66-2.75 4.25-5.45 4.25-3.3 0-6-2.7-6-6s2.7-6 6-6c1.5 0 2.85.55 3.9 1.45l2.9-2.9C17.1 3.9 14.7 3 12 3 7.05 3 3 7.05 3 12s4.05 9 9 9c5.3 0 8.65-3.75 8.65-9.05 0-.65-.05-1.25-.15-1.85Z"/>
+          </svg>
+          <span>{isLoading ? "Redirecting to Google..." : "Continue with Google"}</span>
+        </button>
 
         <div className="pt-4 border-t border-[#e8e5e0] text-center text-xs text-[#71717a]">
-          <p>The AI interviewer will greet you naturally by name.</p>
+          <p>The AI interviewer will greet you naturally by your Google profile name.</p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

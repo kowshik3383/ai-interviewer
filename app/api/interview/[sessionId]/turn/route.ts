@@ -1,6 +1,7 @@
 // app/api/interview/[sessionId]/turn/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { requireUser, requireOwnedSession } from "@/lib/auth";
 import { buildInterviewerPrompt } from "@/lib/prompts/interviewer";
 import { callWithFallback, parseInterviewerResponse, ChatMessage } from "@/lib/openrouter";
 import { getNextSessionState, SessionContext } from "@/lib/fsm";
@@ -22,6 +23,13 @@ export async function POST(req: Request, { params }: RouteParams) {
       exitCode,
       actionOverride,
     } = body;
+
+    const auth = await requireUser();
+    if (auth.response) return auth.response;
+    const user = auth.user;
+
+    const owned = await requireOwnedSession(sessionId, user.id);
+    if (owned.response) return owned.response;
 
     // Load session with previous turns
     const session = await prisma.session.findUnique({

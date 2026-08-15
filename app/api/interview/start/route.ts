@@ -1,7 +1,7 @@
 // app/api/interview/start/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { buildInterviewerPrompt } from "@/lib/prompts/interviewer";
 import { callWithFallback, parseInterviewerResponse } from "@/lib/openrouter";
 
@@ -10,7 +10,10 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const { language = "javascript", difficulty = "mid", candidateName: inputName } = body;
 
-    const user = await getCurrentUser();
+    const auth = await requireUser();
+    if (auth.response) return auth.response;
+    const user = auth.user;
+
     const candidateName = inputName?.trim() || user.name || "Candidate";
 
     // Ensure user exists in database
@@ -21,7 +24,7 @@ export async function POST(req: Request) {
     if (!dbUser) {
       dbUser = await prisma.user.create({
         data: {
-          id: user.id.startsWith("candidate-") ? undefined : user.id,
+          id: user.id,
           email: user.email,
           name: candidateName,
           avatar: user.image || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(candidateName)}`,

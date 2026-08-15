@@ -2,6 +2,8 @@
 
 // app/dashboard/page.tsx
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -31,19 +33,26 @@ interface SessionSummary {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [candidateName, setCandidateName] = useState("Kowshik");
+  const candidateName = session?.user?.name || "Candidate";
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedName = localStorage.getItem("ai_interviewer_candidate_name");
-      if (storedName) setCandidateName(storedName);
+    if (status === "unauthenticated") {
+      router.replace("/login");
+      return;
     }
+    if (status !== "authenticated") return;
 
     async function loadSessions() {
       try {
         const res = await fetch("/api/sessions");
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           setSessions(data.sessions || []);
@@ -56,7 +65,7 @@ export default function DashboardPage() {
     }
 
     loadSessions();
-  }, []);
+  }, [status, router]);
 
   const completedSessions = sessions.filter((s) => s.status === "completed" || s.finalScore);
   const avgScore =

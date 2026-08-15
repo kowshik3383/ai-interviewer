@@ -3,6 +3,7 @@
 // app/interview/setup/page.tsx
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -18,19 +19,22 @@ import { SUPPORTED_LANGUAGES, getQuestionBank } from "@/lib/prompts/question-ban
 function InterviewSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const initialLang = searchParams.get("lang") || "javascript";
 
   const [selectedLang, setSelectedLang] = useState(initialLang);
   const [difficulty, setDifficulty] = useState<"junior" | "mid" | "senior">("mid");
-  const [candidateName, setCandidateName] = useState("Kowshik");
+  const [candidateName, setCandidateName] = useState("Candidate");
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("ai_interviewer_candidate_name");
-      if (stored) setCandidateName(stored);
+    if (status === "unauthenticated") {
+      router.replace("/login");
     }
-  }, []);
+    if (session?.user?.name) {
+      setCandidateName(session.user.name);
+    }
+  }, [status, session?.user?.name, router]);
 
   const bank = getQuestionBank(selectedLang);
 
@@ -39,10 +43,6 @@ function InterviewSetupContent() {
     setIsStarting(true);
 
     try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("ai_interviewer_candidate_name", candidateName.trim());
-      }
-
       const res = await fetch("/api/interview/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,6 +52,11 @@ function InterviewSetupContent() {
           candidateName: candidateName.trim(),
         }),
       });
+
+      if (res.status === 401) {
+        router.replace("/login");
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));

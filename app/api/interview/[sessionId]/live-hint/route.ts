@@ -1,6 +1,7 @@
 // app/api/interview/[sessionId]/live-hint/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { requireUser, requireOwnedSession } from "@/lib/auth";
 import { analyzeLiveCodeAndGenerateHint } from "@/lib/hint-engine";
 
 interface RouteParams {
@@ -12,6 +13,13 @@ export async function POST(req: Request, { params }: RouteParams) {
     const { sessionId } = await params;
     const body = await req.json().catch(() => ({}));
     const { currentCode = "", idleDurationSeconds = 35 } = body;
+
+    const auth = await requireUser();
+    if (auth.response) return auth.response;
+    const user = auth.user;
+
+    const owned = await requireOwnedSession(sessionId, user.id);
+    if (owned.response) return owned.response;
 
     const session = await prisma.session.findUnique({
       where: { id: sessionId },

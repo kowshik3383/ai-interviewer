@@ -1,5 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
+import Providers from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-[#fffafa] text-[#1b1b1b] antialiased flex flex-col font-sans selection:bg-neutral-900 selection:text-[#fffafa]">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

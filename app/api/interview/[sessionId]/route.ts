@@ -1,6 +1,7 @@
 // app/api/interview/[sessionId]/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { requireUser, requireOwnedSession } from "@/lib/auth";
 
 interface RouteParams {
   params: Promise<{ sessionId: string }>;
@@ -9,6 +10,13 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   try {
     const { sessionId } = await params;
+
+    const auth = await requireUser();
+    if (auth.response) return auth.response;
+    const user = auth.user;
+
+    const owned = await requireOwnedSession(sessionId, user.id);
+    if (owned.response) return owned.response;
 
     const session = await prisma.session.findUnique({
       where: { id: sessionId },

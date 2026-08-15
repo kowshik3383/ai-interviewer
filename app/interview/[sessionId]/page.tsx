@@ -39,6 +39,10 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
     async function loadSession() {
       try {
         const res = await fetch(`/api/interview/${sessionId}`);
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
         if (!res.ok) throw new Error("Session not found");
         const data = await res.json();
         setSession(data.session);
@@ -51,7 +55,7 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
     }
 
     loadSession();
-  }, [sessionId]);
+  }, [sessionId, router]);
 
   // Handle Proactive Live Hints from WebSocket
   const handleHintReceived = useCallback((hint: LiveHint) => {
@@ -109,6 +113,11 @@ export default function InterviewWorkspacePage({ params }: PageParams) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answer: text }),
       });
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(`Turn failed with status ${res.status}`);

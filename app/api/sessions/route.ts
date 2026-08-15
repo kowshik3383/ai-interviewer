@@ -1,14 +1,16 @@
 // app/api/sessions/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const user = await getCurrentUser();
+    const auth = await requireUser();
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
     const sessions = await prisma.session.findMany({
-      where: user.id && !user.id.startsWith("candidate-") ? { userId: user.id } : undefined,
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
       include: {
         _count: {

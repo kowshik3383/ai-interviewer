@@ -3,6 +3,7 @@
 // app/interview/[sessionId]/report/page.tsx
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Scorecard from "@/components/report/Scorecard";
@@ -15,6 +16,7 @@ interface PageParams {
 
 export default function ReportPage({ params }: PageParams) {
   const { sessionId } = use(params);
+  const router = useRouter();
   const [report, setReport] = useState<EvaluationReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -24,6 +26,10 @@ export default function ReportPage({ params }: PageParams) {
     async function loadOrGenerateReport() {
       try {
         const res = await fetch(`/api/interview/${sessionId}/report`);
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
         if (!res.ok) {
           throw new Error("Report not ready or session missing");
         }
