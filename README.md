@@ -4,7 +4,7 @@
 
 Practices you across **9 programming languages** and **3 difficulty levels** — from warm-up to live coding to a full hiring scorecard — powered by a deterministic interview state machine and a multi-model AI fallback chain.
 
-[![Next.js 16](https://img.shields.io/badge/Next.js-16.x-black)](https://nextjs.org) [![React 19](https://img.shields.io/badge/React-19.2-blue)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org) [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8)](https://tailwindcss.com) [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748)](https://www.prisma.io) [![License](https://img.shields.io/badge/License-Private-red)]() [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)]()
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.x-black)](https://nextjs.org) [![React 19](https://img.shields.io/badge/React-19.2-blue)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org) [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8)](https://tailwindcss.com) [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748)](https://www.prisma.io) [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)]()
 
 ---
 
@@ -298,4 +298,8 @@ Bug reports, feature requests, and PRs are welcome. Please open an issue before 
 
 ## 📄 License
 
-Private project. All rights reserved.
+This project is licensed under the [**Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**](/LICENSE).
+
+You are free to **use, study, share, and build upon** this code for **educational and non-commercial purposes**, with attribution. Commercial use is **not** permitted.
+
+> ⚠️ **Educational purpose**: This project is a learning resource for interview preparation. It is not production-grade and is provided as-is without warranty.
