@@ -23,6 +23,7 @@ Practices you across **9 programming languages** and **3 difficulty levels** —
 
 ## 🏗️ System Architecture
 
+```mermaid
 flowchart LR
     subgraph Client["Next.js 16 Client (React 19 + Tailwind v4)"]
         UI["App Router Pages<br/>/interview/setup · /interview/[id] · /report · /dashboard"]
@@ -89,11 +90,13 @@ flowchart LR
     Turn --> Prisma
     Report --> Prisma
     Prisma --> SQLite
+```
 
 ---
 
 ## 🔄 Interview Turn Flow
 
+```mermaid
 flowchart TD
     A["Candidate answers + code snapshot"] --> B["POST /api/interview/[id]/turn"]
     B --> C["Load Session + last 10 turns (Prisma)"]
@@ -105,11 +108,13 @@ flowchart TD
     H --> I["Persist candidate + AI turns"]
     I --> J["Update session state / finalScore"]
     J --> K["Return score, notes, action, next state"]
+```
 
 ---
 
 ## 📊 FSM State Machine
 
+```mermaid
 stateDiagram-v2
     [*] --> INTRO
     INTRO --> WARMUP_QUESTION
@@ -120,6 +125,7 @@ stateDiagram-v2
     FOLLOW_UPS --> WRAP_UP
     WRAP_UP --> REPORT_GENERATED
     REPORT_GENERATED --> [*]
+```
 
 ---
 
@@ -143,6 +149,7 @@ stateDiagram-v2
 
 ## 🧩 Scoring Rubric
 
+```mermaid
 flowchart LR
     subgraph Turn["Per-Turn Score (0–10)"]
         C["Correctness & Accuracy (0–4)"]
@@ -154,6 +161,7 @@ flowchart LR
         N["Recommendation: STRONG_HIRE ≥ 85<br/>HIRE ≥ 70 · LEAN_HIRE ≥ 55<br/>LEAN_NO_HIRE ≥ 45 · else NO_HIRE"]
     end
     Turn --> Report
+```
 
 ---
 
