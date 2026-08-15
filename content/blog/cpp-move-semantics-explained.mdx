@@ -1,0 +1,103 @@
+---
+title: "C++ Move Semantics and the Rule of Five, Explained"
+description: "Move semantics and rvalue references in C++ — what moving means, why the Rule of Five exists, and how to answer it in interviews."
+slug: cpp-move-semantics-explained
+date: "2026-07-12"
+updated: "2026-07-12"
+language: cpp
+level: mid
+tags: [cpp, move-semantics, raii]
+excerpt: "Move semantics transfer resources instead of copying them. Here's how rvalue references enable it and why the Rule of Five matters."
+---
+
+Move semantics is C++'s answer to expensive copies: **when the source is a temporary you'll never use again, steal its resources instead of duplicating them.** The mechanism is rvalue references; the discipline is the Rule of Five.
+
+## Why move exists
+
+```cpp
+std::vector<int> makeVector() {
+  return std::vector<int>(1000000, 7);
+}
+auto v = makeVector(); // C++11+: the temporary is *moved*, not copied
+```
+
+Before C++11, returning a large container meant copying every element (or relying on copy elision). Move semantics lets the returned temporary hand its heap buffer to `v` — one pointer swap, no element copy.
+
+## The two kinds of values
+
+C++11 split values into **lvalues** (things with an address, like named variables) and **rvalues** (temporaries, like the result of a function call). An **rvalue reference** (`T&&`) binds only to rvalues — and that's the signal "this is safe to take from."
+
+```cpp
+void sink(std::string&& s);        // takes an rvalue (temporary)
+std::string name = "hello";
+sink(name);                        // error: name is an lvalue
+sink(std::move(name));             // ok: std::move casts it to rvalue
+```
+
+## What `std::move` really is
+
+It's a cast — `static_cast<T&&>(x)`. It moves nothing itself; it just marks an lvalue as "safe to move from," enabling the move constructor/assignment to be selected. After a move, the source is in a **valid-but-unspecified** state — you can destroy it or reassign it, but you shouldn't assume its contents.
+
+## The Rule of Five
+
+If your class manages a resource (a heap buffer, a file handle, a socket), it typically needs all five special members working together:
+
+1. Destructor
+2. Copy constructor
+3. Copy assignment operator
+4. Move constructor
+5. Move assignment operator
+
+```cpp
+class UniquePtr {
+  int* ptr;
+public:
+  explicit UniquePtr(int* p = nullptr) : ptr(p) {}
+  ~UniquePtr() { delete ptr; }
+
+  UniquePtr(const UniquePtr&) = delete;             // no copying
+  UniquePtr& operator=(const UniquePtr&) = delete;
+
+  UniquePtr(UniquePtr&& o) noexcept : ptr(o.ptr) {  // move ctor
+    o.ptr = nullptr;                                // disarm the source
+  }
+  UniquePtr& operator=(UniquePtr&& o) noexcept {    // move assign
+    if (this != &o) {
+      delete ptr;
+      ptr = o.ptr;
+      o.ptr = nullptr;
+    }
+    return *this;
+  }
+};
+```
+
+The move operations *steal* the source's pointer and null it out — so the source's destructor has nothing to free, and you avoid a double-free. The copy operations are deleted, so you can't accidentally copy an owning handle.
+
+## Rule of Zero
+
+If a class uses STL containers and smart pointers exclusively, it has no raw resource to manage — so it should define **none** of the five (the "Rule of Zero"). The compiler generates correct copy/move/destroy for free. This is the modern default: prefer Rule of Zero, fall back to Rule of Five only when you genuinely manage a resource.
+
+## Perfect forwarding
+
+`std::forward` preserves the value category of a forwarding reference, so a template can pass an argument along as lvalue or rvalue exactly as received:
+
+```cpp
+template <typename T>
+void wrap(T&& arg) {
+  consume(std::forward<T>(arg));  // forwards as rvalue if arg was an rvalue
+}
+```
+
+`std::move` casts unconditionally; `std::forward` casts conditionally. That's the difference interviewers probe.
+
+## The interview answer
+
+"Move semantics let us transfer ownership of resources from temporaries instead of copying. Rvalue references mark what's safe to take from, `std::move` casts an lvalue to enable that, and the Rule of Five ensures the copy and move operations stay consistent when a class owns a resource. When a class uses only smart pointers and containers, the Rule of Zero applies and we define nothing."
+
+<CTA language="cpp" label="Practice C++ questions with the AI interviewer" />
+
+## Related guides
+
+- [Top C++ Interview Questions](/blog/top-cpp-interview-questions) — RAII, vtables, templates
+- [C pointers vs references](/blog/c-pointers-vs-references)

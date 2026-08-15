@@ -1,0 +1,68 @@
+---
+title: "What a Good Technical Answer Looks Like (vs a Weak One)"
+description: "Annotated examples of strong and weak interview answers — and the rubric that separates them: correctness, depth, and communication."
+slug: good-technical-answers-vs-weak-answers
+date: "2026-06-12"
+updated: "2026-06-12"
+tags: [interview-answers, communication, depth]
+excerpt: "Correct-but-thin answers score lower than you think. Here are annotated good vs weak answers, scored on the three signals interviewers use."
+---
+
+Most candidates lose points not on wrong answers but on *thin* ones. A correct answer that stops at "yes, that's how it works" scores dramatically lower than one that shows the mechanism. Here's what separates them, scored on the three signals every interview uses: **correctness, depth, and communication.**
+
+## The weak answer pattern
+
+> **Q: "What's the difference between `==` and `===` in JavaScript?"**
+>
+> **Weak:** "`==` checks value and `===` checks value and type. You should use `===`."
+
+That answer is *correct.* It's also a 5/10. Here's why, against the rubric:
+
+- **Correctness (4/4):** It's accurate. ✓
+- **Depth (1/3):** It states the difference without the *why* — no coercion, no example, no gotcha. The knowledge stops at the definition.
+- **Communication (2/3):** It's clear but ends where the interviewer's probe begins. No structure, no demonstration.
+
+## The strong answer pattern
+
+> **Strong:** "`==` compares values after *type coercion*, while `===` compares values *without* coercion — so `===` also requires the types to match. For example, `1 == '1'` is true because the string is coerced to a number, but `1 === '1'` is false. The coercion rules are the gotcha: `null == undefined` is true, but `'' == 0` is also true, which is why `==` causes bugs and `===` is the safe default."
+
+Why this scores 9/10:
+
+- **Correctness (4/4):** Accurate, and more precisely stated (coercion, not just "type").
+- **Depth (3/3):** Names the mechanism (coercion), demonstrates it with concrete examples, and flags the non-obvious cases. The interviewer learns the candidate understands *why* `==` is dangerous.
+- **Communication (3/3):** Leads with the definition, then the mechanism, then examples, then the takeaway. An interviewer could transcribe it into notes as-is.
+
+## The depth ladder
+
+Depth is the category candidates most often under-build, and it's a ladder:
+
+**Level 1 — Definition.** "A hash map stores key-value pairs."
+**Level 2 — Mechanism.** "It hashes the key to an index, handling collisions with chaining or open addressing."
+**Level 3 — Trade-offs.** "Lookup is average O(1) but worst-case O(N) with bad hashes, and it gives up ordering."
+**Level 4 — Judgment.** "So for top-K over a stream I'd reach for a heap instead, because it's O(N log K) with bounded memory."
+
+The interviewer's follow-ups are probing which level you're on. If you *want* to be at level 3–4, put the ladder's upper rungs in your initial answer rather than waiting to be dragged up it.
+
+## Communication: the shape of a strong answer
+
+The strongest answers share a shape, in this order:
+
+1. **Lead with the answer.** One sentence that directly answers the question. No throat-clearing, no "well, it depends."
+2. **Give the mechanism.** Why it works the way it does.
+3. **Demonstrate it.** A concrete example or a walkthrough.
+4. **Name the trade-off or gotcha.** The edge case, the cost, the "when not to."
+5. **Land the takeaway.** One sentence that says what to remember.
+
+Weak answers usually fail on step 1 (burying the answer in context) and step 4 (stopping before the interesting part). Correctness is table stakes — depth and communication are where interviews are won.
+
+## The interview answer
+
+"Strong answers lead with the answer, then give the mechanism, demonstrate it, name the trade-off, and land a takeaway. Weak answers stop at correctness — a correct but thin answer scores mid-pack because depth and communication each carry weight. The fix is building the depth ladder into the first pass: definition, mechanism, trade-offs, and judgment, so follow-ups confirm depth instead of dragging it out."
+
+<CTA label="Get scored on correctness, depth, and communication" />
+
+## Related guides
+
+- [How to talk through code while coding](/blog/how-to-talk-through-code)
+- [How the AI interviewer scores your answer](/blog/how-ai-scores-your-answers)
+- [What your hiring scorecard means](/blog/what-your-hiring-scorecard-means)

@@ -1,0 +1,95 @@
+---
+title: "The JavaScript Event Loop Explained (Microtasks, Macrotasks, and Output Questions)"
+description: "How the event loop, microtasks, and macrotasks really work — with the output-order questions that dominate JavaScript interviews."
+slug: javascript-event-loop-explained
+date: "2026-07-06"
+updated: "2026-07-06"
+language: javascript
+level: mid
+tags: [javascript, event-loop, asynchronous]
+excerpt: "The event loop, the microtask queue, and the macrotask queue explained — plus the output-order questions every JS interview asks."
+---
+
+The event loop is the answer to "how does JavaScript do async when it's single-threaded?" The model: **one call stack, one job at a time, and two queues that the loop drains in a specific order.** Output questions test whether you actually understand the order.
+
+## The three pieces
+
+**Call stack.** JavaScript runs one task at a time on a single thread. Functions push onto the stack, run, pop off.
+
+**Macrotask queue.** Callbacks from `setTimeout`, `setInterval`, `setImmediate`, and I/O events land here. Also called the task queue.
+
+**Microtask queue.** Promise callbacks (`.then`, `.catch`, `.finally`), `queueMicrotask`, and `await` continuations land here.
+
+## The ordering rule
+
+The loop does this:
+
+1. Run one macrotask to completion.
+2. Drain the **entire** microtask queue.
+3. Run the next macrotask.
+
+Microtasks always run *before* the next macrotask — and new microtasks scheduled *during* the drain also run before returning to macrotasks. That's the whole algorithm.
+
+```js
+console.log("A");                       // sync, macrotask scope
+setTimeout(() => console.log("B"), 0);  // macrotask
+Promise.resolve().then(() => console.log("C")); // microtask
+console.log("D");                       // sync
+// Output: A, D, C, B
+```
+
+Sync code prints first (`A`, `D`). Then the loop drains microtasks before macrotasks, so `C` prints before `B` — even though `setTimeout` had a 0ms delay.
+
+## Why the order matters
+
+The microtask queue is processed *between* tasks but *within* the same task's turn. That's what makes promises feel atomic: no other task can run in between your `.then` callbacks. It's also why a promise chain that keeps scheduling microtasks can starve the macrotask queue — infinite `Promise.resolve().then()` loops block timers.
+
+## Nested promises still drain first
+
+```js
+setTimeout(() => console.log("timer"), 0);
+Promise.resolve().then(() => {
+  Promise.resolve().then(() => console.log("nested"));
+  console.log("outer");
+});
+// Output: outer, nested, timer
+```
+
+The entire microtask queue drains (including newly-added microtasks) before the timer runs.
+
+## async/await is just promise sugar
+
+`await` pauses the async function and registers a continuation as a microtask. So:
+
+```js
+async function f() {
+  console.log("1");
+  await Promise.resolve();
+  console.log("3");
+}
+f();
+console.log("2");
+// Output: 1, 2, 3
+```
+
+`console.log("1")` runs synchronously. `await` yields; `2` prints; then the microtask continuation prints `3`.
+
+## The interview answer
+
+"JavaScript runs one task at a time on the call stack. Asynchronous callbacks go to two queues: microtasks for promises and `queueMicrotask`, macrotasks for timers and I/O. After each macrotask, the event loop drains the entire microtask queue before starting the next macrotask. That's why promise callbacks beat `setTimeout(…, 0)` and why await pauses an async function to a microtask."
+
+## Practice questions to drill
+
+1. `console.log` vs `setTimeout` vs `Promise.then` — predict the order, then run it.
+2. A `setTimeout(0)` inside a `.then` — which queue wins, and why?
+3. An infinite microtask loop — what happens to a pending timer?
+4. Two chained `await`s — trace each continuation through the microtask queue.
+
+Each of these is the shape of a real interview output question, and the trace-through-the-queues method is the skill being tested.
+
+<CTA language="javascript" label="Practice event loop questions with the AI interviewer" />
+
+## Related guides
+
+- [Top JavaScript Interview Questions](/blog/top-javascript-interview-questions) — closures, promises, `this`
+- [JavaScript closures explained](/blog/javascript-closures-explained)

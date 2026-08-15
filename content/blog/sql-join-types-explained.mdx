@@ -1,0 +1,101 @@
+---
+title: "SQL JOIN Types Explained: When to Use Each"
+description: "Every SQL join explained with examples — INNER, LEFT, RIGHT, FULL OUTER, CROSS, and self-joins — plus the NULL traps that trip people up."
+slug: sql-join-types-explained
+date: "2026-07-20"
+updated: "2026-07-20"
+language: sql
+level: junior
+tags: [sql, joins, database]
+excerpt: "INNER, LEFT, RIGHT, FULL OUTER, CROSS, and self-joins with real examples — and the NULL traps that break naive queries."
+---
+
+A join combines rows from two tables by a relationship — usually matching a foreign key to a primary key. The type of join decides what happens to rows that *don't* match, and that's the whole story.
+
+## The one sentence that explains every join
+
+**INNER** keeps only matches. **LEFT** keeps all left rows, adding NULLs where there's no right match. **RIGHT** mirrors that. **FULL OUTER** keeps everything from both sides. **CROSS** pairs every row with every row. Everything else is detail.
+
+## Setup for the examples
+
+```sql
+-- customers: id, name
+-- orders:    id, customer_id, amount
+```
+
+Two customers: Alice (1) has orders; Bob (2) has none.
+
+## INNER JOIN — the default mental model
+
+```sql
+SELECT c.name, o.amount
+FROM customers c
+INNER JOIN orders o ON c.id = o.customer_id;
+```
+
+Rows that don't match on both sides are dropped. Bob disappears because he has no orders. Most business queries want this — "orders with their customers."
+
+## LEFT JOIN — "all of the left side, matches where available"
+
+```sql
+SELECT c.name, o.amount
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id;
+```
+
+Alice gets her orders; Bob appears once, with `amount` as NULL. This is the join for "every customer, even ones who never ordered" — the classic "find customers without orders" is a LEFT JOIN plus `WHERE o.id IS NULL`.
+
+## RIGHT JOIN
+
+The mirror — all right rows, NULLs on the left. Rarely used; teams usually flip the tables and use LEFT JOIN, which reads more naturally.
+
+## FULL OUTER JOIN
+
+All rows from both sides; missing side fills with NULLs. Useful for reconciliations — "show me every record on either side, and flag where they don't line up."
+
+## CROSS JOIN
+
+Every row of A paired with every row of B — Cartesian product. Rare and deliberate: generating combinations (all products × all sizes) or calendar tables.
+
+## Self-join
+
+Joining a table to itself, using two aliases. The employee/manager classic:
+
+```sql
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.id;
+```
+
+## The NULL traps
+
+Three ways a naive query silently returns wrong results:
+
+**1. LEFT JOIN + wrong WHERE.** Filtering on the right table's column in `WHERE` turns the join into an inner join:
+
+```sql
+-- WRONG: Bob disappears; the NULL amount fails the filter
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+WHERE o.amount > 100;
+
+-- RIGHT: put right-side filters in the ON clause
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+  AND o.amount > 100;
+```
+
+**2. NOT IN with NULLs.** `WHERE id NOT IN (SELECT customer_id FROM orders)` returns nothing if the subquery contains any NULL. Use `NOT EXISTS` instead.
+
+**3. Counting NULLs.** `COUNT(o.amount)` skips NULLs — which, after a LEFT JOIN, silently undercounts. Use `COUNT(*)` or a CASE expression when you want to count the left rows regardless.
+
+## Which join is "the right one"?
+
+Ask: *which side must be preserved?* If you must keep every customer (or every employee, every product), that side is the anchor — LEFT JOIN it. If only matches matter, INNER. If both sides must survive, FULL OUTER. Naming the anchor side out loud is the interview answer that scores.
+
+<CTA language="sql" label="Practice SQL JOIN questions with the AI interviewer" />
+
+## Related guides
+
+- [Top SQL Interview Questions](/blog/top-sql-interview-questions) — window functions, indexing, and transactions
+- [How window functions work](/blog/sql-window-functions-guide)

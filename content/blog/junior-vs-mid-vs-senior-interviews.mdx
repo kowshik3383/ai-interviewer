@@ -1,0 +1,81 @@
+---
+title: "Junior vs Mid vs Senior Interviews: What's Actually Different"
+description: "How interview expectations change across junior, mid, and senior levels — and what interviewers score at each stage."
+slug: junior-vs-mid-vs-senior-interviews
+date: "2026-07-02"
+updated: "2026-07-02"
+level: junior
+tags: [career, interview-prep, levels]
+excerpt: "Junior, mid, and senior interviews test different things: correctness first, then depth, then judgment. Here's the shift and how to target each."
+---
+
+Interview expectations change with level — and the change isn't "harder questions," it's *different questions about the same answer.* Knowing the shift lets you aim at the right target instead of over- or under-preparing.
+
+## The one-line summary
+
+**Junior interviews test whether you can write correct code. Mid interviews test whether you can explain it. Senior interviews test whether you'd make good decisions with it.** The question content overlaps; the scoring emphasis doesn't.
+
+## Junior: correctness and fundamentals
+
+What's being evaluated:
+
+- Can you solve a standard problem in the language? Correct output, clean structure.
+- Do you know the fundamentals cold — data structures, time complexity, language mechanics?
+- Can you communicate your approach before you start typing?
+
+The scorecard at this level weights **correctness heavily** and accepts a simpler explanation. The bar is "a solid engineer who needs supervision, not a leaky coder who needs rescue."
+
+What to study: language fundamentals, the top-N questions per language, and thinking out loud. The biggest junior failure isn't wrong answers — it's silence. Walk through your approach even when you're not sure.
+
+## Mid: depth and reasoning
+
+The shift: correct isn't enough — you must explain *why*.
+
+What's being evaluated:
+
+- Trade-offs. Why this data structure over that one? Why O(N log N) here?
+- Edge cases. What happens with empty input, all duplicates, large inputs?
+- Follow-ups. "What if this list were a stream?" — can you adapt under probing?
+- Communication. Can you structure an answer an interviewer can follow?
+
+Interviewers push with the classic follow-up types: clarify (you were vague), probe deeper (you were right but surface-level), challenge (there's a subtle bug or missed edge case). Mid interviews are where those probes dominate.
+
+What to study: every "why" behind your fundamentals, and the concept deep-dives — `==` vs `===`, move semantics, window functions. Explain answers aloud; that's the skill being tested.
+
+## Senior: judgment and systems
+
+The shift: they're hiring someone who can *decide*, not just *answer*.
+
+What's being evaluated:
+
+- Does the solution scale and compose? What breaks under real load?
+- Do you state assumptions and requirements before solving — or dive into code?
+- Can you weigh trade-offs and say "here's what I'd do and why, and here's what I'd give up"?
+- Ownership, failure handling, and a realistic sense of scope.
+
+The questions get more open-ended: design a system, refactor for concurrency, add caching. The rubric shifts to **problem-solving and communication share** — correctness still matters but no longer dominates. The senior challenge questions in most banks (LRU cache, lock-free structures, recursive hierarchies) are scored on the *reasoning path*, not just the final code.
+
+What to study: trade-off talk, systems thinking, and practicing the "what would you do differently at scale" follow-up.
+
+## How the same question scores differently
+
+Take "reverse a string."
+
+- **Junior pass:** correct, in-place, no extra buffer, handled the null/empty case.
+- **Mid pass:** correct *and* explained the two-pointer approach, the O(1) space claim, and what happens with UTF-8.
+- **Senior pass:** correct, explained, *and* asked "what am I optimizing — throughput, memory, or readability?" before writing anything.
+
+Same question, three different bars. The interview answer that scores at each level changes accordingly.
+
+## How to prepare for your level
+
+- Target one level, not all three. Pick the seniority you're interviewing for and weight your prep to its emphasis.
+- Practice the follow-up format. Static question lists can't simulate the probe — "tell me more," "what if," "why that approach" — that defines mid and senior rounds.
+- Rehearse out loud. Every concept you can't explain in 60 seconds is a liability at mid and a deal-breaker at senior.
+
+<CTA label="Practice at your target level with the AI interviewer" />
+
+## Related guides
+
+- [What interviewers actually score you on](/blog/what-interviewers-score-you-on) — the rubric, category by category
+- [How the AI interviewer scores your answer](/blog/how-ai-scores-your-answers)

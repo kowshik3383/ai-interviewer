@@ -1,0 +1,152 @@
+---
+title: "Top 25 C# Interview Questions (with Answers)"
+description: "C# interview questions on LINQ, async/await, .NET GC, delegates, nullable types, and modern C# features — with code answers."
+slug: top-csharp-interview-questions
+date: "2026-07-30"
+updated: "2026-07-30"
+language: csharp
+level: mid
+tags: [csharp, dotnet, interview-questions]
+featured: true
+excerpt: "25 C# interview questions covering LINQ, async/await, .NET garbage collection, delegates, records, and modern .NET."
+---
+
+C# interviews blend language mechanics with the .NET runtime underneath — LINQ, async/await, the GC, and disposal patterns. The questions below are the ones that keep showing up, ordered the way interviews tend to flow.
+
+## 1–5: Language fundamentals and modern C#
+
+**1. Properties vs fields?**
+
+A field is raw storage; a property is a pair of accessor methods (`get`/`set`) with the syntax of a field. Properties let you add validation, lazy loading, computed values, and change notifications without breaking callers. Modern C# uses auto-properties and init-only setters.
+
+**2. What are records?**
+
+A `record` is a reference (or value, with `record struct`) type with value equality — two records with the same property values are equal. They come with `with` expressions for non-destructive mutation:
+
+```csharp
+var a = new Person("Alice", 30);
+var b = a with { Age = 31 };
+```
+
+**3. `record` vs `class` vs `struct`?**
+
+`class` — reference type, identity equality by default. `struct` — value type, copied by value. `record` — value equality, immutability-focused syntax. Choose `record` for data carriers, `struct` for small immutable values, `class` for mutable identity objects.
+
+**4. What is the null-forgiving operator?**
+
+`!` tells the compiler "this isn't null" when it can't prove it — it suppresses nullable analysis warnings. It doesn't check anything at runtime. `myVar!` means "trust me."
+
+**5. What are nullable reference types?**
+
+A compile-time feature (enabled in modern templates) where reference types can be declared `string` (non-nullable) or `string?` (nullable). The compiler warns when you dereference a possibly-null value — a static analysis safety net, not a runtime feature.
+
+## 6–10: LINQ
+
+**6. What is LINQ?**
+
+Language Integrated Query — a set of extension methods over `IEnumerable<T>` that chain into declarative data transformations: `Where`, `Select`, `GroupBy`, `OrderBy`, `Aggregate`.
+
+**7. What is deferred execution?**
+
+LINQ queries are not executed when defined — only when enumerated. `Where` and `Select` build lazy iterators; `ToList()` or `Count()` force execution. A query over a changing source sees the data *at enumeration time*, not definition time. This is the single most important LINQ concept.
+
+**8. `IEnumerable<T>` vs `IQueryable<T>`?**
+
+`IEnumerable` is in-memory LINQ-to-objects — lambdas are compiled delegates. `IQueryable` builds an expression tree that a provider translates into another language (LINQ-to-SQL, EF Core → SQL). The distinction dictates whether filtering happens in-memory or in the database.
+
+**9. How does `GroupBy` work?**
+
+Groups the sequence by a key selector into `IGrouping<TKey, TElement>` — a sequence of key→elements pairs. Combine with aggregates:
+
+```csharp
+employees
+    .GroupBy(e => e.Department)
+    .Select(g => new { Dept = g.Key, Avg = g.Average(e => e.Salary) })
+    .Where(x => x.Avg > 75000);
+```
+
+**10. `Select` vs `SelectMany`?**
+
+`Select` maps one element to one result. `SelectMany` flattens — maps each element to a sequence, then concatenates all sequences. Use it to project a collection-of-collections into one flat stream.
+
+## 11–15: async/await and concurrency
+
+**11. What is `async`/`await`?**
+
+Compiler-generated state machine. `async` methods return `Task`/`Task<T>`; `await` yields control until the awaited task completes, without blocking the thread. The thread returns to the pool during the await.
+
+**12. `Task` vs `ValueTask`?**
+
+`Task` is a heap-allocated reference type — fine for most cases. `ValueTask` is a value type avoiding the allocation when the operation completes synchronously or is awaited once. Use `ValueTask` in hot async paths where you await each result exactly once.
+
+**13. What is `ConfigureAwait(false)`?**
+
+Controls whether the continuation resumes on the original synchronization context (e.g., the UI thread). In UI code, `ConfigureAwait(false)` avoids deadlocks and improves throughput; in library code it's essential. The classic deadlock: `syncContext`. `.Result` on an async method that needs that same context.
+
+**14. Why does `.Result` or `.Wait()` deadlock?**
+
+If the async method awaits a task whose continuation needs the UI synchronization context, and you block the UI thread with `.Result`, the continuation can never run — the UI thread is waiting on a task that's waiting on the UI thread. Avoid synchronous blocking on async code.
+
+**15. What is `CancellationToken`?**
+
+A cooperative cancellation mechanism — `ct.ThrowIfCancellationRequested()` and `Task.Delay(delay, ct)` let operations stop promptly instead of being aborted. Correct async APIs accept and honor one.
+
+## 16–20: Delegates, events, and memory
+
+**16. What is a delegate?**
+
+A type-safe function pointer — a reference to a method. `Func<T>` and `Action<T>` are the generic built-ins; `Func` returns a value, `Action` doesn't.
+
+**17. What is an event?**
+
+A multicast delegate with restricted invocation — only the declaring class can raise it; subscribers add/remove handlers. Built on delegates but with the publish/subscribe discipline enforced.
+
+**18. What is a memory leak in .NET?**
+
+Not an un-freed allocation (the GC handles those) — a *retained reference* to an object that's no longer needed. The classic: subscribing to an event on a long-lived object from a short-lived one. The event source holds the subscriber alive forever. Unsubscribe in `Dispose`.
+
+**19. How does the .NET GC work?**
+
+Generational: Gen 0 (short-lived), Gen 1, Gen 2 (long-lived), plus the Large Object Heap for big allocations. A Gen 0 collection is cheap and frequent; most objects die there. Surviving objects get promoted. The LOH is only collected on a full GC.
+
+**20. What is the `IDisposable` pattern?**
+
+For unmanaged resources, `Dispose()` with the canonical pattern — `Dispose(bool)`, `GC.SuppressFinalize`, guarding against double disposal:
+
+```csharp
+public void Dispose()
+{
+    Dispose(true);
+    GC.SuppressFinalize(this);
+}
+```
+
+It frees unmanaged resources deterministically *and* tells the GC not to bother finalizing.
+
+## 21–25: Senior-level reasoning
+
+**21. `abstract class` vs `interface` in modern C#?**
+
+An abstract class provides state + partial implementation; an interface is a contract. Since C# 8, interfaces can have default implementations, blurring the line — but a class still implements many interfaces and extends one base.
+
+**22. What is explicit interface implementation?**
+
+Implementing an interface member with a fully-qualified name (`IFoo.Bar()`), making it callable only through the interface type. Used to resolve name collisions or hide members from the class's public surface.
+
+**23. What are `Span<T>` and `Memory<T>`?**
+
+Stack-allocatable (or pooled) contiguous memory slices that avoid heap allocations for slices and parsing — `Span<T>` can't live on the heap, so `Memory<T>` is its heap-safe counterpart. They're the modern tools for zero-allocation performance in .NET.
+
+**24. What is `stackalloc`?**
+
+Allocates a buffer on the stack instead of the heap — no GC pressure, but bounded size and no escaping the method. Used with `Span<T>` for fast, allocation-free small buffers.
+
+**25. What is the `Dispose` pattern's relationship to `finalizers`?**
+
+A finalizer (`~Class()`) runs on GC, unpredictably. `Dispose` gives deterministic cleanup; `GC.SuppressFinalize` then skips the redundant finalizer pass. The canonical `Dispose(bool)` pattern exists precisely to make this safe and idempotent.
+
+<CTA language="csharp" label="Practice C# questions with the AI interviewer" />
+
+## How to study these
+
+C# interviews reward tracing behavior through the runtime — the deferred execution of LINQ, the state machine of async, the generations of the GC. Write small programs that prove each concept (a deadlock, a leak, a deferred LINQ surprise), then practice explaining the *why* under live follow-up questioning, which is the format C# evaluations actually use.

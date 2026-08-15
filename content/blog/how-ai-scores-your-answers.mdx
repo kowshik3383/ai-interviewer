@@ -1,0 +1,69 @@
+---
+title: "How the AI Interviewer Scores Your Answer"
+description: "Behind the scoring: the rubric, the finite state machine, and how each answer becomes a number and a hiring recommendation."
+slug: how-ai-scores-your-answers
+date: "2026-06-14"
+updated: "2026-06-14"
+tags: [ai-interviewer, scoring, methodology]
+excerpt: "Every answer gets scored 0–10 across four categories, the FSM decides the next move, and the transcript becomes a hiring scorecard. Here's the mechanics."
+---
+
+Every answer you give in an AI technical interview is scored the same way a human interviewer scores it — against a rubric, turn by turn — and a finite state machine decides what happens next. Here's the actual mechanics, category by category.
+
+## The per-turn rubric: 0 to 10
+
+Each of your turns is evaluated on three sub-scores that combine into a 0–10 score:
+
+- **Correctness & accuracy (0–4).** Is the answer right? Do the facts hold, is the logic sound, does the code do what it claims?
+- **Depth of understanding / reasoning (0–3).** Beyond right — do you know *why*? The mechanism, the trade-off, the complexity bound. This is where "answers" become "understanding."
+- **Communication clarity & structure (0–3).** Could the interviewer follow it? Did you lead with the answer, structure the explanation, and speak in plain terms?
+
+A strong turn scores in the 8–9 range; a correct-but-thin one lands mid-range; a confident-but-wrong one scores low regardless of how it sounds.
+
+## The finite state machine decides the flow
+
+The interview is a deterministic state machine, not a free-for-all conversation. It moves through stages in a fixed order:
+
+**INTRO → WARMUP_QUESTION → CORE_QUESTIONS → CODING_CHALLENGE → FOLLOW_UPS → WRAP_UP → REPORT_GENERATED**
+
+The number of core questions depends on difficulty (3 for junior, 4 for mid, 5 for senior), and coding challenges similarly (1 junior/mid, 2 senior). The machine caps follow-ups at two per question — so a question never spirals forever, and the interview stays structured no matter how the conversation drifts.
+
+Here's the part that makes it adaptive: after the coding challenge, if your average score is below 7.0 *and* you had a core-answer at or below 5, the FSM inserts a **FOLLOW_UPS** stage to probe the weak area before wrapping up. Score well, and you get a shorter, sharper interview; struggle somewhere, and the interview goes deeper on it. That branching is what makes the evaluation feel human.
+
+## The action loop
+
+After each answer, the system chooses one of four next moves:
+
+- **advance** — you answered solidly; move to the next topic
+- **follow_up** — probe deeper, clarify, or challenge
+- **escalate_difficulty** — you're doing well; raise the bar
+- **wrap_up** — the interview is done
+
+Each turn also records a follow-up *type* — clarify, probe deeper, challenge, redirect, affirm-and-advance, or connect — which is how the interview re-engages rather than just marching down a list.
+
+## The end-of-interview scorecard
+
+When the interview finishes, every scored turn is collected and averaged to a 0–10 score, then normalized to a 0–100 overall score. The full transcript — your answers, per-turn scores, evaluator notes, and code — is synthesized into a report with:
+
+- **Five radar metrics:** Correctness, Depth & Internals, Communication, Problem Solving, and Code Quality
+- **Strengths and growth areas**, derived from the transcript
+- **Next study topics**, specific to where you lost points
+- **A recommendation** mapped from the overall score: **STRONG_HIRE** (85+), **HIRE** (70+), **LEAN_HIRE** (55+), **LEAN_NO_HIRE** (45+), **NO_HIRE** (below)
+
+The radar isn't decorative — it's the same shape a hiring manager builds from a real loop, and it shows you *where* you lost points, which is the part that actually helps you improve.
+
+## Why the evaluation is honest
+
+Everything in the scorecard traces to the transcript: a strength is a strength because a specific turn scored high, a growth area exists because a specific answer fell short. Nothing is invented — the numbers come from the per-turn rubric and the FSM's deterministic transitions. That's what makes the feedback usable: you can see the exact turn that cost you the depth score, and go study it.
+
+## The interview answer
+
+"The scorecard is built from per-turn scores — correctness, depth, and communication, combined to 0–10 — averaged and normalized to 0–100. The interview itself is a finite state machine with deterministic transitions and difficulty-based question counts, capped at two follow-ups per question. If my average dropped below 7 with a weak core answer, the machine adds a follow-up stage to probe it. The final radar — correctness, depth, communication, problem-solving, code quality — maps to a hiring recommendation at the 85/70/55/45 thresholds."
+
+<CTA label="See the scorecard for yourself with a practice interview" />
+
+## Related guides
+
+- [What interviewers actually score you on](/blog/what-interviewers-score-you-on)
+- [What your hiring scorecard means](/blog/what-your-hiring-scorecard-means)
+- [Junior vs mid vs senior interviews](/blog/junior-vs-mid-vs-senior-interviews)

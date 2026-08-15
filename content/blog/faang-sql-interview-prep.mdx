@@ -1,0 +1,67 @@
+---
+title: "How to Prepare for a FAANG SQL Interview"
+description: "What FAANG SQL interviews actually test — window functions, joins, optimization — and the practice plan that builds toward them."
+slug: faang-sql-interview-prep
+date: "2026-06-30"
+updated: "2026-06-30"
+language: sql
+level: mid
+tags: [sql, faang, interview-prep]
+excerpt: "FAANG SQL rounds test problem-solving on real schemas, not syntax recall. Here's the skill stack and how to practice it."
+---
+
+FAANG SQL interviews are less about SQL trivia and more about *solving data problems under time pressure on an unfamiliar schema.* The pattern is remarkably consistent across companies, and it's trainable.
+
+## What the round actually looks like
+
+A schema appears — usually 2–4 tables with a clear relationship (users, orders, products; employees, departments). You get 1–3 increasingly hard queries. The interviewer watches you write, asks about edge cases and performance, and often extends the problem ("now what if a customer can have multiple addresses?").
+
+The two skills being tested: **pattern recognition** (recognizing "this is a top-N-per-group problem") and **communication** (narrating your approach before and during).
+
+## The skill stack, in priority order
+
+**1. Joins — mastered, not memorized.** INNER/LEFT/RIGHT/FULL/CROSS and self-joins, and the NULL traps (filtering the right side in WHERE turning LEFT into INNER; `NOT IN` breaking on NULLs). Most interview schemas live or die here.
+
+**2. Window functions.** The FAANG bread and butter. Top-N-per-group (`ROW_NUMBER() OVER (PARTITION BY … ORDER BY …)`), running totals, rolling averages, `LAG`/`LEAD` for "previous period" problems, `RANK` vs `DENSE_RANK` for ties. If a problem involves "rank", "top", "previous", "consecutive", or "cumulative", it's a window-function problem.
+
+**3. Aggregation with GROUP BY and HAVING.** Every non-aggregated column in the select must be in the group-by. `HAVING` filters groups; `WHERE` filters rows. "Customers who spent more than X" is the canonical shape.
+
+**4. CTEs and subqueries.** Breaking a hard problem into named stages. Recursive CTEs for hierarchies (org charts, trees) show up at the senior end.
+
+**5. Performance awareness.** Whether the interviewer asks directly or not, knowing that an index helps, why a `NOT IN` subquery is dangerous, and reading `EXPLAIN` communicates seniority. "How would this scale to a billion rows?" is a common extension.
+
+**6. Deduplication and date logic.** `DISTINCT`, `DENSE_RANK() = 1` for dedupe, `LAG` over dates, date arithmetic. Consecutive-days problems (gap-and-islands) are a recurring favorite.
+
+## The patterns to internalize
+
+- **Top-N per group** → window rank + filter.
+- **Previous / next value** → `LAG` / `LEAD`.
+- **Running total / rolling average** → `SUM`/`AVG` OVER with a frame.
+- **Consecutive rows** → `ROW_NUMBER` subtraction trick.
+- **Rows with no match** → LEFT JOIN + `IS NULL`, or `NOT EXISTS`.
+- **Hierarchy** → recursive CTE.
+- **Percentile / median** → `PERCENTILE_CONT` or `NTILE`.
+
+Recognizing which pattern a problem is *before* writing SQL is the skill that makes the round feel fast.
+
+## A practice plan
+
+1. **Warm up (week 1).** Drill joins and aggregation until they're automatic. Re-do every query from scratch, not from memory.
+2. **Window week (week 2).** One window-function pattern per day — rank, lag, rolling sum, top-N. Trace each output by hand before running it.
+3. **Problem weeks (weeks 3–4).** Do 2–3 full schema problems a day, timed (25 minutes each), narrating aloud.
+4. **Optimization pass.** After each problem, ask: is an index needed? Is there a smarter join order? Read `EXPLAIN ANALYZE`.
+5. **Interview simulation.** Do at least two timed, scored sessions against a schema you haven't seen — with someone (or something) asking follow-ups and scoring you like a hiring manager.
+
+## The interview answer template
+
+"First I'll read the schema and restate the goal. This looks like a top-N-per-group problem, so I'll use `ROW_NUMBER` over a partition, then filter in an outer query. I'll handle the edge case where there aren't N rows, and I'll use `NOT EXISTS` rather than `NOT IN` to avoid the NULL trap."
+
+Naming the pattern, the tool, the edge cases, and the safety choice — in that order — is the shape that scores.
+
+<CTA language="sql" label="Practice FAANG-style SQL with the AI interviewer" />
+
+## Related guides
+
+- [SQL window functions: a practical guide](/blog/sql-window-functions-guide)
+- [SQL JOIN types explained](/blog/sql-join-types-explained)
+- [Top SQL interview questions](/blog/top-sql-interview-questions)

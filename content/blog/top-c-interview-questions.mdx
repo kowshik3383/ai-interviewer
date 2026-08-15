@@ -1,0 +1,135 @@
+---
+title: "Top 25 C Interview Questions (with Answers)"
+description: "C interview questions on pointers, memory management, undefined behavior, structs, and the compilation pipeline — with code answers."
+slug: top-c-interview-questions
+date: "2026-08-02"
+updated: "2026-08-02"
+language: c
+level: mid
+tags: [c, interview-questions, systems-programming]
+featured: true
+excerpt: "25 C interview questions covering pointers, manual memory management, undefined behavior, structs, and the compilation pipeline."
+---
+
+C interviews are about one thing: whether you understand what's happening in memory. There's no runtime to save you, no garbage collector, no exceptions. The questions below test pointers, ownership, and the undefined behavior traps that only careful C programmers avoid.
+
+## 1–5: Pointers and memory layout
+
+**1. What is a pointer?**
+
+A variable that holds a memory address — the location of another object. `int *p = &x;` makes `p` point to the location where `x` lives; `*p` dereferences to reach the value.
+
+**2. What is pointer arithmetic?**
+
+Adding an integer to a pointer moves it by that many *elements of the pointed-to type*, not bytes. `p + 1` on an `int*` advances `sizeof(int)` bytes. The language does this scaling for you — and assumes you're pointing into an array.
+
+**3. What is array-to-pointer decay?**
+
+Using an array name in most contexts converts it to a pointer to its first element. `sizeof(arr)` still gives the array's total bytes, but passing `arr` to a function gives a pointer — so `sizeof` inside the function is wrong. That's the classic `sizeof`-in-a-parameter bug.
+
+**4. What is a double pointer (`int **`) and when do you need it?**
+
+A pointer to a pointer. You need it when a function must modify a caller's pointer — e.g., to reallocate and hand back a new address, or to build dynamic 2D structures.
+
+**5. What is a function pointer?**
+
+A variable that holds a function's address, letting you pass behavior around — callbacks, dispatch tables.
+
+```c
+int (*op)(int, int) = add;
+op(3, 4);  // calls add(3, 4)
+```
+
+## 6–10: Manual memory management
+
+**6. `malloc` vs `calloc` vs `realloc`?**
+
+`malloc(n)` — uninitialized `n` bytes. `calloc(count, size)` — zero-initialized, and takes count×size (which also guards against some overflow). `realloc(ptr, n)` — resizes an existing block, preserving contents, returning a *possibly new address*.
+
+**7. What happens if you don't check `malloc`'s return?**
+
+`malloc` returns `NULL` on failure. Dereferencing a `NULL` result is a crash. Checking the return — and handling the failure path — is non-negotiable in production C.
+
+**8. What is a memory leak?**
+
+Memory you allocated but never `free`d. It's still referenced nowhere, so it can never be reclaimed until the process exits. Repeated in a loop, it grows unboundedly.
+
+**9. What is a use-after-free?**
+
+Accessing memory after `free()`. The allocator may have reused it for something else — reading garbage, or corrupting other data. It's undefined behavior.
+
+**10. How do you find leaks and use-after-free?**
+
+Valgrind (Memcheck) reports both — definitely-lost blocks and invalid reads/writes on freed memory. AddressSanitizer (`-fsanitize=address`) catches the same at runtime with less overhead. Knowing the tools is part of the answer.
+
+## 11–15: Structs, unions, and alignment
+
+**11. What is struct padding?**
+
+The compiler inserts bytes between struct members to align them to their natural boundaries — `int` on 4-byte boundaries, pointers on 8-byte. The struct's size is larger than the sum of its members.
+
+**12. Why does member order matter?**
+
+Reordering members packs them tighter. `char c; int i; char d;` is padded to 12 bytes; `char c; char d; int i;` is 8 bytes. A senior candidate rearranges members deliberately and can explain alignment.
+
+**13. What is a union?**
+
+A region of memory shared by all members — only one member is alive at a time. Unions save memory at the cost of type safety (C doesn't track which member is active).
+
+**14. What are bitfields?**
+
+Struct members declared with a bit width — `unsigned int flag : 1;` — packing flags into a single integer. Useful for flags and protocols, at the cost of implementation-defined layout.
+
+**15. What is `#pragma pack`?**
+
+A directive to disable or override padding. It's a protocol-hygiene tool (wire formats, hardware registers) and a footgun elsewhere — misaligned access and portability issues.
+
+## 16–20: Undefined behavior and the compilation pipeline
+
+**16. What is undefined behavior?**
+
+The standard declines to define what happens. The compiler is free to do anything — crash, work by luck, optimize away your code, or erase your disk. It's not "a bug," it's "the contract is void."
+
+**17. Name common UB traps.**
+
+Signed integer overflow, out-of-bounds array access, dereferencing `NULL` or freed pointers, uninitialized variable reads, `strcpy` past a buffer, modifying a string literal, `shift` by ≥ the type width.
+
+**18. Why is signed integer overflow UB?**
+
+The standard allows two's complement but doesn't mandate it. Making it UB lets compilers assume it can't happen and optimize aggressively — which is exactly why `x + 1 > x` can be optimized to always-true.
+
+**19. What are the stages of compilation?**
+
+Preprocessing (`#include`, `#define`, `#ifndef` guards), compilation to assembly, assembly to object code, linking. Errors can originate at each stage — a senior candidate can say *where* an error class occurs.
+
+**20. What are header guards?**
+
+`#ifndef FOO_H` / `#define FOO_H` / `#endif` around a header — preventing double-inclusion of the same declarations during one translation unit.
+
+## 21–25: Strings, storage, and senior reasoning
+
+**21. Why is `strcpy` dangerous?**
+
+It copies until it hits a `'\0'` — with no bound check. If the source isn't terminated, or the destination is too small, it writes past the buffer. Prefer `strncpy` (carefully) or `snprintf`.
+
+**22. What is the null terminator pitfall?**
+
+A C string is a `char` array ending in `'\0'`. Forget the terminator and every function that scans for it (`strlen`, `strcpy`, `printf` with `%s`) reads past the array. Allocate `n + 1` bytes for `n` characters.
+
+**23. What do the storage classes mean?**
+
+`static` — file-scope internal linkage or function-local persistent storage. `extern` — declares a variable defined elsewhere. `auto` — the default for locals (rarely written). `register` — a hint to store in a register (obsolete).
+
+**24. What does `volatile` mean in C?**
+
+Reads and writes to the variable can't be optimized away — the compiler must re-read it from memory each time. For memory-mapped I/O and shared flags, not for thread synchronization (that's an atomics job).
+
+**25. How do you detect a cycle in a linked list?**
+
+Floyd's tortoise-and-hare — a slow and fast pointer; if they meet, there's a cycle. O(N) time, O(1) space. In C the harder half is the cleanup — freeing the nodes of a cyclic list safely without infinite recursion.
+
+<CTA language="c" label="Practice C questions with the AI interviewer" />
+
+## How to study these
+
+The fastest way to internalize C is to break things deliberately: write the leak, run it under valgrind, fix it; write the use-after-free, run it under AddressSanitizer. Then practice the interview where you explain memory decisions out loud while writing to a stub the interviewer watches — that live-code scrutiny is exactly what C roles simulate.

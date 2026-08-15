@@ -1,0 +1,142 @@
+---
+title: "Top 20 CSS Interview Questions (with Answers)"
+description: "CSS interview questions on the box model, flexbox, grid, specificity, responsiveness, and modern CSS features — with code answers."
+slug: top-css-interview-questions
+date: "2026-07-26"
+updated: "2026-07-26"
+language: css
+level: junior
+tags: [css, frontend, interview-questions]
+featured: true
+excerpt: "20 CSS interview questions covering the box model, flexbox, grid, specificity, container queries, and modern color."
+---
+
+CSS interviews test whether you understand the cascade, the box model, and the modern layout systems — not whether you can memorize utilities. These are the questions that keep showing up, with the explanations interviewers expect.
+
+## 1–5: The box model and fundamentals
+
+**1. Explain the box model.**
+
+Every element is a box: content, padding, border, margin. Total width = content + padding + border + margin (in `content-box`). In `border-box`, the declared width *includes* padding and border, so sizing math is sane.
+
+```css
+* { box-sizing: border-box; }
+```
+
+**2. `border-box` vs `content-box`?**
+
+`content-box` (default) — width applies to content only; padding/border add to it. `border-box` — width includes padding and border. `border-box` is nearly always what you want for layouts; the "reset" at the top of every stylesheet exists for that reason.
+
+**3. What is margin collapsing?**
+
+Adjacent vertical margins merge into the larger of the two instead of summing. A `margin-bottom` and the next element's `margin-top` collapse. Fixes: padding, border, `overflow` hidden, flex/grid items (they don't collapse), or `display: flow-root` on the parent.
+
+**4. What is the difference between `display: none` and `visibility: hidden`?**
+
+`none` removes the element from the layout entirely (no space, not rendered, not interactive). `hidden` keeps the space but makes it invisible. And `opacity: 0` keeps the space *and* still receives events.
+
+**5. What does `position: sticky` do?**
+
+An element that stays in its normal flow position until it crosses a threshold, then sticks to the viewport — like `relative` + `fixed` combined. The trap: it fails silently unless the element's parent is tall enough and the element has a `top`/`left` value.
+
+## 6–10: Flexbox and grid
+
+**6. What is flexbox for?**
+
+One-dimensional layout — distributing space along a single axis, with alignment on the cross axis. `flex-direction` sets the main axis; `justify-content` aligns along it; `align-items`/`align-self` across it; `gap` spaces items.
+
+**7. `flex-grow`, `flex-shrink`, `flex-basis`?**
+
+`flex-grow` — how extra space is distributed (share of surplus). `flex-shrink` — how the item shrinks when space runs out. `flex-basis` — the initial main-size before growing/shrinking. `flex: 1` means `1 1 0%`.
+
+**8. When would you pick grid over flexbox?**
+
+Grid is two-dimensional — rows *and* columns together, with full control over placement. Use grid for page layouts, card grids, and anything with aligned rows and columns; flexbox for one-dimensional flows (navbars, button rows, media objects).
+
+**9. What does `repeat(auto-fit, minmax(280px, 1fr))` do?**
+
+An automatic responsive grid — as many 280px-or-wider columns as fit, `auto-fit` collapsing empty tracks.
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+```
+
+No media queries needed — this is the modern "responsive without breakpoints" pattern.
+
+**10. `auto-fit` vs `auto-fill`?**
+
+Both create as many tracks as fit. `auto-fill` keeps empty tracks (columns stay, even if empty). `auto-fit` collapses empty tracks to zero and stretches items. For card grids, `auto-fit` is usually what you want.
+
+## 11–15: The cascade, specificity, and responsiveness
+
+**11. How does specificity work?**
+
+The browser picks the winning declaration by specificity, then source order. Specificity = inline (highest), IDs, classes/attributes/pseudo-classes, elements/pseudo-elements. `!important` overrides specificity (and is a smell).
+
+**12. `:is()` vs `:where()`?**
+
+Both accept selector lists. `:is()` takes the specificity of its most specific argument; `:where()` always has zero specificity. Use `:where()` to write low-specificity, easily-overridable selectors.
+
+**13. What are cascade layers?**
+
+`@layer` lets you order entire groups of rules — `@layer reset, base, components, utilities;` — so a whole layer wins or loses against another *regardless of specificity*. Modern replacement for specificity wars.
+
+**14. What are container queries?**
+
+`@container` — responding to the *container's* size, not the viewport. A card can switch layout based on how wide its parent is:
+
+```css
+.container { container-type: inline-size; }
+@container (min-width: 500px) {
+  .card { flex-direction: row; }
+}
+```
+
+The component becomes viewport-independent — reusable anywhere.
+
+**15. What is `clamp()`?**
+
+`clamp(MIN, VAL, MAX)` — fluid values between bounds. `font-size: clamp(1rem, 0.5rem + 2vw, 1.5rem)` scales with the viewport but never leaves the range. The modern way to do fluid typography without multiple breakpoints.
+
+## 16–20: Modern CSS and senior reasoning
+
+**16. How do you center a div?**
+
+The eternal question — and the answers have gotten cleaner: flexbox (`display: flex; place-items: center`), grid (`place-items: center`), or `margin: auto` on a fixed-width child. Grid is the shortest modern answer.
+
+**17. What are CSS custom properties (variables)?**
+
+Design tokens scoped to a selector, inheritable down the tree, changeable at runtime — the basis of theming and component systems.
+
+```css
+:root { --surface: oklch(0.2 0.03 260); }
+.card { background: var(--surface); }
+```
+
+**18. Why `oklch` and `color-mix`?**
+
+`oklch` is perceptually uniform — lightness is consistent across hues, so colors stay predictable. `color-mix()` mixes colors in a specified color space. Together they replace the old hex/rgba guesswork with a real color system.
+
+**19. How do you respect reduced motion?**
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none; transition: none; }
+}
+```
+
+Honoring `prefers-reduced-motion` is an accessibility requirement, not a nicety — and interviewers increasingly ask it.
+
+**20. What is a stacking context and z-index?**
+
+A stacking context is a set of elements painted as a unit — created by `position` + `z-index`, `transform`, `opacity < 1`, `filter`, and more. `z-index` only compares within the same stacking context; a child's `z-index` can't escape its parent's context. That's why "my z-index isn't working" is usually a stacking-context problem.
+
+<CTA language="css" label="Practice CSS questions with the AI interviewer" />
+
+## How to study these
+
+CSS is best learned by breaking and fixing: build a layout, then explain every property choice out loud. Practice the interview format where you write CSS against a live stub — the auto-fit grid, the container query, the sticky header — while an interviewer asks "what happens if the parent is a flex item?" That adaptive follow-up is exactly how CSS skills get evaluated.

@@ -1,0 +1,84 @@
+---
+title: "The Big-O Cheat Sheet: Complexities You Must Know for Interviews"
+description: "Big-O complexity for every common data structure and operation — the cheat sheet to memorize for coding interviews, with the reasoning behind it."
+slug: big-o-complexity-cheat-sheet
+date: "2026-06-16"
+updated: "2026-06-16"
+tags: [algorithms, big-o, cheat-sheet]
+excerpt: "Big-O for arrays, hash maps, trees, sorts, and graph algorithms — the complexity table worth memorizing, and how to reason about it."
+---
+
+Big-O is the vocabulary of algorithm interviews — you can't score a coding round without it. This is the cheat sheet worth memorizing, plus the reasoning that lets you derive the ones you forget.
+
+## The complexity ladder
+
+| Notation | Name | Example |
+| --- | --- | --- |
+| O(1) | Constant | Hash map lookup, array index access |
+| O(log N) | Logarithmic | Binary search, balanced tree ops |
+| O(N) | Linear | Single pass over a list |
+| O(N log N) | Linearithmic | Efficient sorts (merge, quick, heap) |
+| O(N²) | Quadratic | Nested loops, naive sort |
+| O(2^N) | Exponential | Subset enumeration |
+| O(N!) | Factorial | Permutations |
+
+The rule of thumb for nested loops: one loop over N is O(N); nested loops multiply — O(N²), O(N³). Loops that halve their work each step are O(log N).
+
+## Data structures
+
+| Structure | Access | Search | Insert | Delete |
+| --- | --- | --- | --- | --- |
+| Array | O(1) | O(N) | O(N) | O(N) |
+| Array (end append) | O(1) | O(N) | O(1)* | O(1)* |
+| Linked list | O(N) | O(N) | O(1) | O(1) |
+| Hash map | O(1)* | O(1)* | O(1)* | O(1)* |
+| Binary search tree (balanced) | O(log N) | O(log N) | O(log N) | O(log N) |
+| Stack / queue | O(N) access | O(N) | O(1) | O(1) |
+
+*Average case, amortized. Hash map worst case (bad hashes) is O(N). An unbalanced BST degrades to O(N) — that's why "balanced" matters.
+
+The three most-repeated insights: hash maps give near-O(1) everything at the cost of order; arrays are O(1) to index but O(N) to insert in the middle; linked lists trade O(1) inserts/deletes for O(N) access.
+
+## Sorting
+
+| Sort | Best | Average | Worst | Space |
+| --- | --- | --- | --- | --- |
+| Merge sort | O(N log N) | O(N log N) | O(N log N) | O(N) |
+| Quick sort | O(N log N) | O(N log N) | O(N²) | O(log N) |
+| Heap sort | O(N log N) | O(N log N) | O(N log N) | O(1) |
+| Insertion sort | O(N) | O(N²) | O(N²) | O(1) |
+
+Worth naming in interviews: merge sort is stable and O(N log N) worst-case but needs O(N) space; quick sort is usually fastest in practice but has an O(N²) worst case (bad pivot); heap sort is in-place but unstable.
+
+## Graphs
+
+| Operation | Adjacency list | Adjacency matrix |
+| --- | --- | --- |
+| Add vertex | O(1) | O(V²) |
+| Add edge | O(1) | O(1) |
+| Check edge | O(deg(V)) | O(1) |
+| Traverse (BFS/DFS) | O(V + E) | O(V²) |
+
+The traversal cost — O(V + E) for adjacency lists — is the single most-repeated graph fact in interviews. BFS uses a queue (shortest path in unweighted graphs); DFS uses a stack or recursion.
+
+## How to derive what you forget
+
+Two habits replace memorization:
+
+**Count the passes.** One loop = O(N). Two nested = O(N²). A divide step (`/ 2`, halving) plus a combine pass = O(N log N) — that's merge sort's shape.
+
+**Ask "what does this repeat for each N?"** Binary search eliminates half the work each step, so it's O(log N). A sort that repeatedly compares pairs is O(N²).
+
+**State space complexity too.** "O(N log N) time, O(N) space" is a complete answer; naming only time is a partial one. Merge sort's O(N) space is its defining trade-off — interviewers probe it.
+
+## The interview answer
+
+"Big-O describes how runtime or memory grows with input. I reason in passes — one loop is linear, nested loops multiply, and halving steps give log factors. The structures I reach for: hash maps for O(1) lookups, balanced trees for ordered O(log N) access, arrays for indexing, and heaps for top-K problems at O(N log K). I always state both time and space complexity."
+
+<CTA label="Practice complexity questions in a live interview" />
+
+## Related guides
+
+- [What interviewers actually score you on](/blog/what-interviewers-score-you-on)
+- [How long should you study before a coding interview](/blog/how-long-to-study-for-coding-interview)
+- [Top JavaScript Interview Questions](/blog/top-javascript-interview-questions)

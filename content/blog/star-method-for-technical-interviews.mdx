@@ -1,0 +1,64 @@
+---
+title: "STAR Method for Technical Interviews (with Examples)"
+description: "Use the STAR method to structure technical answers — situation, task, action, result — with real examples and when it fits coding rounds."
+slug: star-method-for-technical-interviews
+date: "2026-06-20"
+updated: "2026-06-20"
+tags: [career, star-method, behavioral]
+excerpt: "The STAR method structures any interview answer — situation, task, action, result. Here's how to apply it to technical and behavioral questions."
+---
+
+The STAR method is the standard structure for interview answers — and it works for technical questions too, not just behavioral ones. The four parts: **Situation, Task, Action, Result.** Used well, it turns rambling into a tight, complete story the interviewer can follow and score.
+
+## The four parts
+
+**Situation** — the context, in one or two sentences. What was the setup?
+**Task** — what specifically were you responsible for? The goal.
+**Action** — what did *you* do? This is where technical detail lives.
+**Result** — what happened? Measurable where possible.
+
+## A behavioral example
+
+**Question:** "Tell me about a time you fixed a hard bug."
+
+- **Situation:** "We were shipping a mobile checkout flow, and a subset of users saw a blank screen after payment."
+- **Task:** "I owned the root cause — the bug was blocking release."
+- **Action:** "I reproduced it with the reported device profile, added logging around the post-payment navigation, and found the session object was null after a timeout on low-memory devices. I made the navigation resilient to a missing session and added a regression test for the timeout path."
+- **Result:** "The fix shipped on time, the failure rate dropped to zero in the release, and we kept the regression test in CI."
+
+That's ~30 seconds, complete, and lets the interviewer probe any part they care about.
+
+## Applying STAR to technical answers
+
+The same skeleton structures a "walk me through your approach" moment:
+
+- **Situation:** "The feature needed to process a large stream of events in real time."
+- **Task:** "The constraint was memory — we couldn't hold everything."
+- **Action:** "I chose a streaming pass with a frequency map, reasoning that the key set was bounded, and validated it against a month of production data."
+- **Result:** "Peak memory dropped by 90% and the feature hit its latency budget."
+
+Notice what this does: it forces the *trade-off* and the *outcome* into the answer — exactly the depth and judgment signals senior rubrics look for.
+
+## The two mistakes
+
+**1. The answer with no Result.** "I did X and Y" with no outcome is a list, not a story. Interviewers can't score impact without the outcome. If the result wasn't measurable, say so honestly — "we couldn't measure it directly, but we shipped on time" — rather than inventing a metric.
+
+**2. The answer with no Action (or a collective one).** "We did, we built, we improved." Interviewers need *your* specific contribution. It's fine to say "I led X while the team did Y" — just make your part clear.
+
+## When STAR doesn't fit
+
+Not everything needs the full structure. A direct technical question — "how does a hash map work?" — wants a direct answer, not a situation. Use STAR for stories and design questions ("walk me through a project you're proud of", "tell me about a production incident"), and use the direct-definition shape for fundamentals.
+
+The skill is knowing which mode you're in. Stories and design walkthroughs get STAR; fact and mechanism questions get straight answers.
+
+## The interview answer
+
+"STAR is a four-part structure — situation, task, action, result. I use it for any story or design question because it forces me to give context, my specific contribution, and a measurable outcome. For pure fact questions I give a direct answer instead, so the structure never pads what should be short."
+
+<CTA label="Practice answering under follow-up pressure" />
+
+## Related guides
+
+- [How to talk through code while coding](/blog/how-to-talk-through-code)
+- [What interviewers actually score you on](/blog/what-interviewers-score-you-on)
+- [The technical interview format walkthrough](/blog/technical-interview-format-walkthrough)

@@ -1,0 +1,72 @@
+---
+title: "== vs === in JavaScript: The Complete Guide"
+description: "The difference between == and === explained — what coercion does, why === is safer, and the edge cases that show up in JavaScript interviews."
+slug: javascript-double-equals-vs-triple-equals
+date: "2026-07-24"
+updated: "2026-07-24"
+language: javascript
+level: junior
+tags: [javascript, equality, coercion]
+excerpt: "== coerces types before comparing; === doesn't. Here's exactly what that means, the coercion rules, and why === is the safer default."
+---
+
+`===` is the safest default in JavaScript: it compares both value *and* type, with no coercion. `==` converts operands to a common type first, which is where the surprising results come from. That's the whole difference — the rest is edge cases.
+
+## What coercion does
+
+With `==`, when the two operands have different types, JavaScript tries to make them the same type before comparing:
+
+```js
+"5" == 5;     // true  — string coerced to number
+0 == false;   // true  — false coerced to 0
+null == undefined; // true — the one pair that's special
+```
+
+With `===`, no conversion ever happens. Different types is an instant `false`:
+
+```js
+"5" === 5;    // false
+0 === false;  // false
+null === undefined; // false
+```
+
+## The coercion rules worth knowing
+
+The full `==` algorithm is long, but the parts that show up in interviews:
+
+1. If both are the same type, `==` behaves like `===`.
+2. If one is a number and the other a string, the string becomes a number.
+3. If one is a boolean, the boolean becomes a number first (`true` → 1, `false` → 0) — *then* the above applies.
+4. If one is an object and the other is a primitive, the object calls `valueOf()`/`toString()`.
+5. `null == undefined` is `true`; `null === undefined` is `false`. This one special case is why many codebases write `== null` to check "null or undefined."
+
+The boolean step is the source of most surprises:
+
+```js
+[] == false;  // true — [] → "" → 0, and false → 0
+[0] == false; // true — [0] → "0" → 0
+[] == ![];    // true — famous trap
+```
+
+## Why `===` is the safer default
+
+Predictability. `==`'s coercions are almost never what you meant. `" " == 0` is `true`; `"abc" == NaN` is `false` even though `"abc"` *is* `NaN` as a number — coercion makes reasoning hard.
+
+Rules most teams adopt:
+
+- Default to `===` everywhere.
+- The one acceptable `==` is `== null` (checks both null and undefined). Some prefer explicit `=== null || x === undefined` instead.
+- For comparing objects, neither works — `===` on two objects compares references, not contents. That's what a deep-equality utility is for.
+
+## The interview answer
+
+If an interviewer asks, the score-raising shape is: "`===` compares value and type without coercion; `==` coerces first. I default to `===` for predictability, and I know the coercion table — including `null == undefined` — so I'm never surprised when `==` appears in legacy code."
+
+Then, if they push on `NaN`: `NaN` is not equal to *anything*, including itself — `NaN === NaN` is `false` — which is why `Number.isNaN()` exists.
+
+<CTA language="javascript" label="Practice equality questions with the AI interviewer" />
+
+## Related guides
+
+- [Top JavaScript Interview Questions](/blog/top-javascript-interview-questions) — closures, the event loop, and `this` binding
+- [How the event loop actually works](/blog/javascript-event-loop-explained)

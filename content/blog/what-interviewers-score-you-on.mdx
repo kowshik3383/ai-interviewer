@@ -1,0 +1,63 @@
+---
+title: "What Interviewers Actually Score You On"
+description: "The four categories interviewers weigh in a technical interview — correctness, depth, communication, and problem-solving — and how to score well in each."
+slug: what-interviewers-score-you-on
+date: "2026-06-28"
+updated: "2026-06-28"
+tags: [interview-prep, scoring, rubric]
+excerpt: "Most technical interviews score four things: correctness, depth, communication, and problem-solving. Here's what each means and how to optimize."
+---
+
+Most technical interview rubrics reduce to four categories — and if you know what they are, you can aim at them directly instead of guessing. The weighting shifts with seniority, but the categories are remarkably stable across companies.
+
+## The four categories
+
+**1. Correctness & accuracy.** Does the answer work? Is the code right, the logic sound, the SQL returning the right rows? This is the floor — no score saves a wrong answer at junior level.
+
+**2. Depth of understanding.** Beyond the right answer: do you know *why*? The implementation detail, the trade-off, the edge case, the complexity bound. Depth is what separates "answered" from "understands."
+
+**3. Communication.** Can an interviewer follow your reasoning? Did you state the approach before coding, narrate as you went, and explain decisions in plain terms? In live interviews this is frequently the silent differentiator.
+
+**4. Problem-solving.** How did you handle the unknown? Did you clarify requirements, break the problem down, handle the part you didn't know, and adapt to follow-ups — or freeze?
+
+A hiring scorecard weights these and combines them into a recommendation. Weightings vary by level: juniors lean on correctness, seniors on depth and problem-solving.
+
+## What each category really measures
+
+**Correctness** is measured by tests and edge cases. Empty input, duplicates, one element, large input. The candidate who enumerates edge cases *before* being asked is already scoring on depth.
+
+**Depth** is probed with follow-ups: "what happens if the list is a stream?", "why is this O(N)?", "what if this were concurrent?". The interviewer isn't testing new facts — they're testing whether your first answer has a foundation under it.
+
+**Communication** is scored on structure: approach → code → verification. "I'll use a hash map for O(1) lookups, then iterate once" before writing code beats silent typing every time.
+
+**Problem-solving** shows in the unknown moment. The candidate who says "I'm not sure, but here's how I'd start" scores; the candidate who goes quiet doesn't.
+
+## Where candidates leak points
+
+- **Silence while coding.** Even a correct solution scores poorly on communication if nobody could follow it.
+- **Skipping the approach.** Diving into code without stating a plan forfeits problem-solving points.
+- **Not naming edge cases.** "It handles the empty case, and duplicates don't matter here" is free depth.
+- **Dropping after the first answer.** Not saying "and here's why this is O(N) time and O(1) space" misses the depth follow-up before it's asked.
+- **Over-explaining the easy part, under-explaining the hard part.** Effort should track where the risk is.
+
+## The score-optimizing answer shape
+
+1. **Restate and clarify.** "So we want the top N per group, and ties — how should those rank?"
+2. **Name the approach.** "I'll use a hash map to count, then sort. That's O(N log N)."
+3. **Code it.**
+4. **Verify.** Trace a small example, name the edge cases.
+5. **State the trade-offs.** "A counting approach trades memory for speed; if input were a stream I'd use a different structure."
+
+That shape — clarify → approach → code → verify → trade-offs — covers all four categories in every turn. It's not rehearsed theater; it's what a good interviewer is trying to extract from you anyway.
+
+## The interview answer
+
+"Interviewers score correctness first — is it right? Then depth — do you know why, the edge cases, the complexity? Then communication — can they follow your reasoning? Then problem-solving — how did you handle the unknown? The winning move is to front-run all four: state the approach, code, verify, and name the trade-offs without being asked."
+
+<CTA label="Practice against a scored interview rubric" />
+
+## Related guides
+
+- [Junior vs mid vs senior interviews](/blog/junior-vs-mid-vs-senior-interviews) — how the weighting shifts
+- [How the AI interviewer scores your answer](/blog/how-ai-scores-your-answers)
+- [How to talk through code while coding](/blog/how-to-talk-through-code)

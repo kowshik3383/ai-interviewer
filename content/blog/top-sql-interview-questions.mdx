@@ -1,0 +1,186 @@
+---
+title: "Top 25 SQL Interview Questions (with Answers)"
+description: "SQL interview questions on joins, window functions, indexing, normalization, and transactions — with the queries interviewers want to see."
+slug: top-sql-interview-questions
+date: "2026-08-06"
+updated: "2026-08-06"
+language: sql
+level: mid
+tags: [sql, interview-questions, database]
+featured: true
+excerpt: "25 SQL interview questions spanning joins, window functions, indexing, normalization, transactions, and query optimization."
+---
+
+SQL interviews are unusual: the theory matters, but the execution matters more. Interviewers give you a schema and watch whether you write correct, efficient queries. Here are the questions that recur, with the answers — and the queries — they're looking for.
+
+## 1–5: Joins
+
+**1. Explain the types of joins.**
+
+`INNER` — matching rows only. `LEFT` — all left rows, plus matches from the right (NULLs where no match). `RIGHT` — the mirror. `FULL OUTER` — all rows from both sides. `CROSS` — Cartesian product of every row pairing. Self-join — a table joined to itself, e.g., employees to their manager.
+
+**2. What's the difference between `WHERE` and `HAVING`?**
+
+`WHERE` filters rows before grouping; `HAVING` filters groups after `GROUP BY`. You can't reference an aggregate in `WHERE`, but you can in `HAVING`. (There's a full breakdown in our SQL JOIN types guide.)
+
+**3. When would you use an anti-join?**
+
+To find rows in one table with no match in another — e.g., "customers with no orders." `NOT EXISTS` is the safe form:
+
+```sql
+SELECT c.*
+FROM customers c
+WHERE NOT EXISTS (
+    SELECT 1 FROM orders o WHERE o.customer_id = c.id
+);
+```
+
+`NOT IN` has the NULL trap: if the subquery returns any NULL, `NOT IN` returns nothing.
+
+**4. What is a self-join and when do you use it?**
+
+Joining a table to itself to relate rows within it — employee/manager, follow relationships, or "all pairs of products bought together."
+
+**5. What's the difference between `LEFT JOIN` and `LEFT OUTER JOIN`?**
+
+Nothing — `OUTER` is optional. The same goes for `RIGHT`, `FULL`, and `INNER`.
+
+## 6–10: Grouping, aggregation, and subqueries
+
+**6. What does `GROUP BY` do?**
+
+Collapses rows into groups by the listed columns; every non-aggregated column in the `SELECT` must appear in the `GROUP BY`. Violating that is a classic bug — and a classic interview trap.
+
+**7. How do you find the Nth highest salary?**
+
+The canonical pattern uses `LIMIT/OFFSET`:
+
+```sql
+SELECT DISTINCT salary
+FROM employee
+ORDER BY salary DESC
+LIMIT 1 OFFSET 1;  -- 2nd highest
+```
+
+The edge cases interviewers probe: all salaries identical (returns nothing), fewer than N distinct values, ties.
+
+**8. What's the difference between a subquery and a CTE?**
+
+A CTE (`WITH name AS (...)`) is a named, readable subquery you can reference multiple times and even recurse. Subqueries are inline. For readability and reuse, CTEs win; the optimizer usually treats them equivalently.
+
+**9. What is a recursive CTE?**
+
+A CTE that references itself to traverse hierarchical data — org charts, trees, graphs. Anchor member + `UNION ALL` + recursive member with a termination join.
+
+**10. What do `ROLLUP`, `CUBE`, and `GROUPING SETS` do?**
+
+They generate multiple grouping levels in one pass — `ROLLUP` produces subtotals and a grand total; `CUBE` produces all combinations; `GROUPING SETS` lets you specify exactly which groupings you want.
+
+## 11–15: Window functions
+
+**11. What is a window function?**
+
+A function that computes a value across a set of rows related to the current row, without collapsing them into a single group — each row keeps its identity. `ROW_NUMBER()`, `RANK()`, `LAG()`, `LEAD()`, `SUM() OVER(...)`.
+
+**12. `ROW_NUMBER()` vs `RANK()` vs `DENSE_RANK()`?**
+
+`ROW_NUMBER` gives unique sequential numbers even for ties. `RANK` gives ties the same number and skips the next. `DENSE_RANK` gives ties the same number without gaps.
+
+**13. How do you compute a running total?**
+
+```sql
+SELECT date, amount,
+       SUM(amount) OVER (ORDER BY date) AS running_total
+FROM revenue;
+```
+
+**14. What is a rolling average?**
+
+```sql
+SELECT date, amount,
+       AVG(amount) OVER (
+           ORDER BY date
+           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ) AS rolling_7d
+FROM revenue;
+```
+
+The `ROWS BETWEEN` frame clause is exactly what interviewers check.
+
+**15. Window function vs `GROUP BY`?**
+
+`GROUP BY` reduces the number of rows; window functions don't. That's the one-sentence differentiator that answers most follow-ups.
+
+## 16–20: Indexing and optimization
+
+**16. What is an index?**
+
+A data structure (usually B-tree) that lets the database find rows without scanning the whole table. Trade-off: faster reads, slower writes, more storage.
+
+**17. What's the leftmost-prefix rule?**
+
+For a composite index on `(a, b, c)`, queries can use it for `a`, `a,b`, or `a,b,c` — but not `b` or `b,c` alone. The leading column must be constrained for the index to apply.
+
+**18. `B-tree` vs `hash` index?**
+
+B-tree supports range and order-by queries (`>`, `<`, `BETWEEN`); hash indexes only support equality. That's why B-tree is the default.
+
+**19. What does `EXPLAIN ANALYZE` tell you?**
+
+The query plan — whether a scan is sequential or index-backed, estimated vs actual rows, where sorting and temp spills happen. A senior answer reads the plan and explains *why* the planner chose what it did.
+
+**20. Index scan vs index-only scan?**
+
+An index scan reads the index, then fetches the row from the table. An index-only scan returns everything from the index alone (when all needed columns are covered), skipping the table entirely — the fastest read.
+
+## 21–25: Transactions and senior-level reasoning
+
+**21. What is ACID?**
+
+Atomicity (all-or-nothing), Consistency (valid state to valid state), Isolation (concurrent transactions don't interfere), Durability (committed data survives failures).
+
+**22. What are the isolation levels?**
+
+Read Uncommitted, Read Committed, Repeatable Read, Serializable. Each trades isolation for concurrency. The three anomalies: dirty reads (read uncommitted data), non-repeatable reads (row changes between reads in one transaction), phantom reads (new rows appear between reads).
+
+**23. How do you find consecutive rows — e.g., 3 days in a row?**
+
+The gap-and-islands trick: subtract `ROW_NUMBER()` from the date; consecutive dates share the same difference.
+
+```sql
+WITH dedup AS (
+    SELECT DISTINCT user_id, login_date FROM logins
+), grouped AS (
+    SELECT user_id, login_date,
+           login_date - (ROW_NUMBER() OVER (
+               PARTITION BY user_id ORDER BY login_date
+           ))::int AS grp
+    FROM dedup
+)
+SELECT DISTINCT user_id
+FROM grouped
+GROUP BY user_id, grp
+HAVING COUNT(*) >= 3;
+```
+
+**24. What is `FOR UPDATE SKIP LOCKED`?**
+
+A row lock with a safety valve — workers skip rows locked by others instead of blocking. The standard answer for a high-concurrency task queue:
+
+```sql
+SELECT * FROM task_queue
+WHERE status = 'pending'
+ORDER BY priority DESC
+LIMIT 5
+FOR UPDATE SKIP LOCKED;
+```
+
+**25. How would you normalize a table to 3NF?**
+
+Remove partial dependencies (2NF) and transitive dependencies (3NF): every non-key column depends on the key, the whole key, and nothing but the key. Then discuss the trade-off — denormalization for read-heavy reporting, at the cost of write anomalies.
+
+<CTA language="sql" label="Practice SQL questions with the AI interviewer" />
+
+## How to study these
+
+SQL is best studied hands-on: read the schema, write the query, run it, then read `EXPLAIN ANALYZE`. Practice the pattern recognition — running totals, consecutive groups, top-N-per-group — until the window-function template is automatic. A live interview that shows you a schema and scores your query as you type is the closest rehearsal to the real thing.

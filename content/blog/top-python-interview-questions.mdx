@@ -1,0 +1,207 @@
+---
+title: "Top 30 Python Interview Questions (with Answers)"
+description: "The Python interview questions that show up in real technical interviews — GIL, decorators, context managers, data structures, and concurrency."
+slug: top-python-interview-questions
+date: "2026-08-10"
+updated: "2026-08-10"
+language: python
+level: mid
+tags: [python, interview-questions, coding-interview]
+featured: true
+excerpt: "30 Python interview questions covering the GIL, decorators, context managers, dunder methods, and data structure choices interviewers actually probe."
+---
+
+Python interviews reward two things: knowing the idiomatic answer and being able to explain the implementation detail underneath it. The questions below mirror that pattern — each one has a "what" and a "why," and interviewers will push on the second.
+
+## 1–5: Data structures and their costs
+
+**1. List vs tuple — when do you pick each?**
+
+A list is mutable, a tuple is immutable. Tuples can be used as dictionary keys and have a smaller memory footprint. Interviewers want you to reach for a tuple when you need to express "this collection should not change" — coordinates, database record fields, function returns that are always the same shape. (There's a full deep-dive in our list vs tuple guide.)
+
+**2. What makes a `set` different from a `list`?**
+
+A set is an unordered collection of unique hashable elements with O(1) average membership checks; a list is ordered, allows duplicates, and has O(N) membership. Sets trade ordering for speed — perfect for deduplication and "is this present?" checks.
+
+**3. What is a generator?**
+
+A generator is a function with `yield` that produces values lazily — one at a time, only as consumed — instead of materializing the whole sequence.
+
+```python
+def fib():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+```
+
+Generators are O(1) memory for infinite or huge sequences, and they power `for` loops, `sum()`, and the `itertools` module internally.
+
+**4. When does a generator outperform a list?**
+
+When you process one element at a time and never need random access or the full sequence. Streaming a file line by line, or `sum(x*x for x in range(10**9))` — the list version would try to build a billion-element list first.
+
+**5. What's the time complexity of common operations?**
+
+List append and pop from the end are amortized O(1). List membership and `list.index()` are O(N). Dict and set get/put/delete are O(1) average. Sorting is O(N log N).
+
+## 6–10: The GIL and concurrency
+
+**6. What is the GIL?**
+
+The Global Interpreter Lock is a mutex that allows only one thread to execute Python bytecode at a time, protecting CPython's reference counting. It's why CPU-bound Python programs don't speed up with threads — but I/O-bound ones do, because a thread releases the GIL while waiting on I/O. (See the dedicated GIL deep-dive.)
+
+**7. Threads vs processes vs asyncio — which do you use when?**
+
+Threads for I/O-bound work where you want blocking-style code. Processes (`multiprocessing`) for CPU-bound work — each process gets its own interpreter and GIL. asyncio for many concurrent I/O tasks where the overhead of threads is wasteful. The answer "it depends on what the bottleneck is" scores higher than reciting the definition.
+
+**8. What is `concurrent.futures.ThreadPoolExecutor`?**
+
+A high-level API that runs callables in a pool of worker threads, returning futures you can `result()` on. Cleaner than managing threads by hand and a common mid-level interview topic.
+
+**9. What happens to a thread when it does I/O?**
+
+It releases the GIL while the syscall is in flight, so another thread can run bytecode. That's precisely why `requests.get()` blocks your thread but not your program.
+
+**10. How do you actually parallelize CPU-bound Python?**
+
+`multiprocessing.Pool.map` or `ProcessPoolExecutor` — fork separate processes, each with its own GIL, and distribute chunks. The catch interviewers probe: pickling the arguments and results across process boundaries has real overhead, so chunking matters.
+
+## 11–15: Functions, decorators, and arguments
+
+**11. How do arguments get passed in Python?**
+
+By object reference — "pass by assignment." The reference is copied into the parameter, so rebinding inside the function doesn't affect the caller, but mutating a mutable object does.
+
+```python
+def append_one(lst):
+    lst.append(1)   # mutates the caller's list
+def rebind(lst):
+    lst = [9]       # rebinding; caller unchanged
+```
+
+**12. What is the mutable default argument pitfall?**
+
+Default arguments are evaluated once at function definition time, not per call. A mutable default — `def f(x=[])` — is shared across calls, so `f()` then `f()` accumulates. The fix is `def f(x=None): if x is None: x = []`.
+
+**13. What's the difference between `*args` and `**kwargs`?**
+
+`*args` collects extra positional arguments into a tuple; `**kwargs` collects extra keyword arguments into a dict. `*` alone enforces keyword-only arguments after it; `**` in a call unpacks a dict into keyword arguments.
+
+**14. What is a decorator?**
+
+A callable that takes a function and returns a function (or a wrapped version of it), letting you add behavior without changing the function's body.
+
+```python
+import functools
+
+def retry(max_attempts=3):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except Exception:
+                    if attempt == max_attempts - 1:
+                        raise
+        return wrapper
+    return decorator
+```
+
+**15. Why is `functools.wraps` important?**
+
+It copies `__name__`, `__doc__`, and `__module__` from the original function onto the wrapper. Without it, introspection and `help()` on the decorated function show the wrapper's metadata instead of the original's — a classic "do you understand decorators deeply" question.
+
+## 16–20: Context managers and dunder methods
+
+**16. What is a context manager?**
+
+An object that defines `__enter__` and `__exit__`, used with `with`. It guarantees setup and teardown — opening a file closes it, acquiring a lock releases it — even on exceptions.
+
+**17. How do you write one without a class?**
+
+With `contextlib.contextmanager`, a generator-based alternative:
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def temp_dir():
+    print("enter")
+    yield "/tmp/scratch"
+    print("exit")
+
+with temp_dir() as d:
+    ...
+```
+
+**18. What's the difference between `__str__` and `__repr__`?**
+
+`__repr__` is for developers — unambiguous, ideally evaluable back into the object. `__str__` is for humans and is what `print()` calls. If only one exists, `__str__` falls back to `__repr__`.
+
+**19. Why do you override `__eq__` and `__hash__` together?**
+
+Because Python's rule is "equal objects must have equal hashes." If you define value-based equality, a default identity-based `__hash__` breaks dict/set lookup — equal objects won't collide. Override both, or make the object unhashable by setting `__hash__ = None`.
+
+**20. What does `__slots__` do?**
+
+Declares a fixed set of instance attributes, replacing the per-instance `__dict__`. Result: smaller memory footprint and faster attribute access — at the cost of no dynamic attributes. Interviewers bring it up when memory-heavy object graphs matter.
+
+## 21–25: OOP, typing, and modern Python
+
+**21. What is a dataclass?**
+
+A class decorator that auto-generates `__init__`, `__repr__`, `__eq__` from annotated fields. With `frozen=True` it generates `__hash__` too. It's the default way to write plain data carriers in modern Python.
+
+**22. What is a metaclass?**
+
+A class whose instances are classes — it controls how classes are created. Used in frameworks for automatic registration, validation, or method injection. Interviewers ask it to check whether you understand the class model, not because you'll write metaclasses daily.
+
+**23. What is the difference between a class method, static method, and instance method?**
+
+Instance methods receive `self`; class methods receive `cls` and can access/alter class state via `@classmethod`; static methods receive neither and are just namespaced functions via `@staticmethod`.
+
+**24. What are type hints and does Python enforce them?**
+
+Type hints are annotations, not enforcement — the interpreter ignores them at runtime. Tools like mypy and pyright enforce them statically. Knowing the gap (runtime vs static) is itself a frequent question.
+
+**25. What is structural pattern matching?**
+
+Python 3.10+ `match`/`case`, which destructures values against patterns — not a switch statement.
+
+```python
+match command:
+    case {"action": "quit"}:
+        ...
+    case {"action": "run", "args": [first, *rest]}:
+        ...
+```
+
+## 26–30: Senior-level reasoning
+
+**26. How would you implement an LRU cache?**
+
+The senior Python challenge in our bank asks for an O(1) LRU cache using a doubly-linked list plus a hash map. The canonical answer: `collections.OrderedDict` moves existing keys to the end on access, or build the `Node`/`prev`/`next` structure by hand.
+
+**27. What is the descriptor protocol?**
+
+`__get__`, `__set__`, and `__delete__` control attribute access on class attributes. Property is implemented via descriptors, as are classmethod and staticmethod. A senior answer traces `property` down to the descriptor protocol.
+
+**28. How do you avoid circular imports?**
+
+Move imports inside functions, split modules by responsibility, or use `TYPE_CHECKING` for purely type-only imports. The interviewer is checking whether you understand *why* the cycle happens (module-level evaluation order), not just the workarounds.
+
+**29. What's the difference between `is` and `==`?**
+
+`is` compares identity; `==` compares value via `__eq__`. The classic trap: small ints are cached (`-5..256`), so `a is b` can be true for small equal ints but false for large ones — never rely on it.
+
+**30. How would you profile a slow Python program?**
+
+Order of attack: measure with `cProfile` or `py-spy` before changing anything, find the hot function, distinguish CPU vs I/O bound, then apply the matching tool (processes for CPU, asyncio/threads for I/O, vectorization for numeric loops). Answering "profile first" before "optimize" is what separates senior answers.
+
+<CTA language="python" label="Practice Python questions with the AI interviewer" />
+
+## How to study these
+
+Read each question and answer it out loud in two minutes before looking at the explanation. Then re-explain the mechanism in your own words — that's the part interviewers probe. Finish with a live timed session where you answer follow-up questions you can't anticipate, which is closer to the real format than any static list.

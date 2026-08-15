@@ -1,0 +1,80 @@
+---
+title: "Python List vs Tuple: When to Use Which"
+description: "The real differences between lists and tuples in Python — mutability, memory, hashing, and performance — and how to choose in interviews."
+slug: python-list-vs-tuple
+date: "2026-07-22"
+updated: "2026-07-22"
+language: python
+level: junior
+tags: [python, data-structures]
+excerpt: "Lists are mutable and slower; tuples are immutable, hashable, and lighter. Here's when each wins and what interviewers check."
+---
+
+A list is mutable and a tuple is immutable — that single fact drives every other difference, and it's the answer interviewers want you to build from. Everything else (memory, hashing, performance) follows from it.
+
+## The core difference
+
+```python
+lst = [1, 2, 3]
+tup = (1, 2, 3)
+
+lst[0] = 99   # works
+tup[0] = 99   # TypeError: 'tuple' object does not support item assignment
+```
+
+A list is a resizable, mutable sequence. A tuple is a fixed, immutable sequence. That's it — and it determines the rest.
+
+## What immutability buys you
+
+**Hashability.** A tuple can be a dictionary key or a set element because its hash never changes; a list can't.
+
+```python
+coordinates = {(0, 0): "origin", (1, 2): "point"}
+```
+
+This is the most common interview use case: "why can't a list be a dict key?" — because it's mutable, so its hash could change mid-use and corrupt the dict.
+
+**Safety.** A tuple can't be accidentally mutated when passed to a function. If your function takes a value that must not change, a tuple documents that contract.
+
+## What it costs you
+
+Tuples only support `count` and `index` — no `append`, `remove`, `sort`, or `insert`. If your data needs to grow or change, a tuple is the wrong tool, and you'd be fighting the type.
+
+## Memory and performance
+
+Because a tuple's size is fixed, it's smaller and created faster:
+
+- Tuples have a smaller memory footprint — no overallocation for future growth.
+- Tuple creation is faster than list creation for the same elements.
+- Tuple iteration is marginally faster because of less indirection.
+
+The honest answer: the performance differences are small. You choose a tuple because you *mean* immutability, not to save microseconds. Saying "I pick the tuple for its semantics" scores higher than "it's faster."
+
+## How to decide
+
+| Need | Pick |
+| --- | --- |
+| Sequence that changes (add, remove, reorder) | List |
+| Fixed record — coordinates, DB row, function return | Tuple |
+| Dictionary key / set member | Tuple |
+| "This must not be modified" contract | Tuple |
+| Storage of many small collections | Tuple |
+
+The idiomatic rule: a list is a *collection* of homogeneous items; a tuple is a *record* — a fixed structure where each position means something (`(name, age, email)`).
+
+## Interview gotchas
+
+- `(1)` is just `1` — you need `(1,)` for a one-element tuple. The trailing comma is the tuple literal, not the parentheses.
+- Tuples can *contain* mutable objects. `([1], [2])` is a tuple whose elements can't be reassigned but can be mutated.
+- A namedtuple (or a dataclass) is the upgrade when a tuple's positional fields deserve names.
+
+## The interview answer
+
+"Lists are mutable sequences for collections that change. Tuples are immutable sequences that can be hashed, used as keys, and express 'this is a fixed record.' I reach for tuples for fixed structure and safety, and lists for anything I need to grow."
+
+<CTA language="python" label="Practice Python questions with the AI interviewer" />
+
+## Related guides
+
+- [Top Python Interview Questions](/blog/top-python-interview-questions) — the GIL, decorators, and dunders
+- [The Python GIL explained](/blog/python-gil-explained)

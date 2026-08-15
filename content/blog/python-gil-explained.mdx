@@ -1,0 +1,62 @@
+---
+title: "The Python GIL Explained (And What It Does to Concurrency)"
+description: "What the Global Interpreter Lock is, why Python has it, and how it shapes threading vs multiprocessing vs asyncio decisions."
+slug: python-gil-explained
+date: "2026-07-10"
+updated: "2026-07-10"
+language: python
+level: mid
+tags: [python, gil, concurrency]
+excerpt: "The GIL lets one thread run Python bytecode at a time. Here's why it exists, what it costs, and how to choose threads vs processes vs asyncio."
+---
+
+The Global Interpreter Lock is a mutex inside CPython that allows **only one thread to execute Python bytecode at a time.** It's why Python threads can't speed up CPU-bound code — and why every "Python is slow at threading" complaint traces back to it. The interview-savvy part is knowing what the GIL does *and* doesn't affect.
+
+## Why the GIL exists
+
+CPython uses **reference counting** for memory management: every object tracks how many references point to it, and when the count hits zero, it's freed immediately. A refcount is just an integer, and two threads incrementing/decrementing it concurrently would corrupt it.
+
+The GIL makes every refcount update atomic by serializing bytecode execution. It was a pragmatic trade — simple, fast for single-threaded code, safe memory management — made long before multi-core was the norm.
+
+## What the GIL actually blocks
+
+Only *CPU-bound Python bytecode*. A thread that's executing Python instructions must hold the GIL. But the GIL is **released during I/O** — waiting on a network read, a file operation, or `time.sleep` doesn't hold it. So:
+
+- **I/O-bound threads** overlap fine: while thread A waits on a socket (GIL released), thread B runs.
+- **CPU-bound threads** serialize: each thread competes for the same GIL, so two CPU-heavy threads run at roughly the speed of one.
+
+## Threads vs processes vs asyncio — the decision
+
+| Workload | Tool | Why |
+| --- | --- | --- |
+| I/O-bound, many connections | Threads or asyncio | GIL is released during I/O, so threads overlap; asyncio removes thread overhead entirely |
+| CPU-bound | `multiprocessing` | Each process gets its own interpreter and GIL — real parallelism on multiple cores |
+| Massive concurrency, I/O-bound | asyncio | A single thread juggling thousands of tasks with no thread-switching cost |
+| Mixed | Combos | Threads for I/O parts; processes (or a compiled lib) for the hot CPU parts |
+
+The answer "it depends on whether you're CPU- or I/O-bound" is what interviewers listen for — not the definition.
+
+## Workarounds worth knowing
+
+- **`multiprocessing`** with a `Pool` — the standard CPU-bound answer. The cost interviewers probe: objects are pickled across process boundaries, so chunk sizes and data volume matter.
+- **C extensions / NumPy** release the GIL during heavy numeric work — so NumPy is genuinely parallelizable on large arrays.
+- **Python 3.13's free-threaded build** (no GIL, experimental) is the direction of travel — but production code still runs on the GILed interpreter for now.
+
+## Common interview follow-ups
+
+**"Is threading useless in Python?"** No — for I/O-bound workloads it's exactly right. It's CPU-bound *compute* that threads don't accelerate.
+
+**"Does `asyncio` avoid the GIL?"** Not by dodging it — asyncio is single-threaded by design. It wins by never blocking on I/O at all, so there's no thread to coordinate.
+
+**"Could you make it truly parallel?"** Yes, with `multiprocessing` (separate interpreters), or by delegating to code that releases the GIL.
+
+## The interview answer
+
+"The GIL is a mutex that lets one thread run Python bytecode at a time, protecting CPython's reference counting. It's released during I/O, so threads overlap fine for I/O-bound work but serialize for CPU-bound compute. So: threads or asyncio for I/O, multiprocessing for CPU, and compiled code releases the GIL when it can."
+
+<CTA language="python" label="Practice Python concurrency questions with the AI interviewer" />
+
+## Related guides
+
+- [Top Python Interview Questions](/blog/top-python-interview-questions) — decorators, context managers, dunders
+- [Python list vs tuple](/blog/python-list-vs-tuple)

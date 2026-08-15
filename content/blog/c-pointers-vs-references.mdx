@@ -1,0 +1,75 @@
+---
+title: "C Pointers vs References: What Every C and C++ Interview Asks"
+description: "Pointers and references compared — what each is, when you need one over the other, and the interview answers that score."
+slug: c-pointers-vs-references
+date: "2026-07-16"
+updated: "2026-07-16"
+language: cpp
+level: mid
+tags: [cpp, c, pointers, references]
+excerpt: "A pointer holds an address and can be reseated or null; a reference is an alias that can't. Here's the difference and when each wins."
+---
+
+The question "pointer vs reference" is the crossover classic in C and C++ interviews. The one-line answer: **a pointer stores an address and can be reseated or null; a reference is an alias that always refers to one object and can never be null.** Everything else is consequence.
+
+## What each is, precisely
+
+```cpp
+int value = 42;
+int* ptr = &value;   // pointer: holds the address of value
+int& ref = value;    // reference: an alias for value
+```
+
+- `ptr` is a variable whose value is an address. It can be reassigned to point elsewhere, compared, stored in containers, and left as `nullptr`.
+- `ref` *is* `value` under another name. It cannot be reassigned — `ref = 99` writes through to `value`, it doesn't retarget `ref`. It cannot be null (in valid code), and it has no address of its own that you can meaningfully take.
+
+## The core differences table
+
+| | Pointer | Reference |
+| --- | --- | --- |
+| What it is | Variable holding an address | Alias of another object |
+| Can be null | Yes | No (in well-formed code) |
+| Can be reseated | Yes | No |
+| Needs dereference | Yes (`*p`) | No (`ref` is the value) |
+| Can be stored in containers | Yes | No (need `std::reference_wrapper`) |
+| Pointer arithmetic | Yes | No |
+| Can be created with a temporary | Only via a stored variable | Yes, binds to lifetime-extended temporary |
+
+## When references win
+
+**Function parameters.** Passing by `const T&` avoids copying without any null-check burden and reads cleanly at the call site — the caller just passes the variable, no `&` needed.
+
+```cpp
+void process(const std::string& s);  // read-only, no copy, no null
+```
+
+**Returning access to members.** `operator[]`, getters, and iterator-like accessors return references so callers can both read and write through them.
+
+**Guaranteed presence.** A reference documents "this must exist" — you can't forget a null check because there's nothing to check.
+
+## When pointers win
+
+**Optionality.** A pointer can represent "no value" with `nullptr`. A reference can't. This is the dominant reason for pointers — optional out-parameters, optional dependencies, nodes in a linked list.
+
+**Reseatable state.** If you need to change *what* you're pointing at over time — advancing a cursor, walking a tree — a pointer lets you reassign. A reference is stuck.
+
+**Arrays, raw memory, and ownership transfer.** Pointer arithmetic, walking buffers, and legacy/C-interop APIs all speak pointers.
+
+**Ownership semantics.** Modern C++ doesn't use raw pointers for ownership — `unique_ptr`/`shared_ptr` do. Raw pointers remain for *borrowing* and optionality; references for guaranteed aliasing.
+
+## The interview answer
+
+"A reference is a non-nullable alias that can't be reseated — I use it for parameters and guaranteed access. A pointer can be null and reassigned — I use it for optional values, things that need to change target, and interoperability with C-style APIs. In modern C++, ownership goes to smart pointers; references and raw pointers express borrowing."
+
+## The follow-up interviewers ask
+
+**Why is a reference safer?** No null state means no null-dereference bug, and the syntax hides dereferencing, so misuse is harder. The cost: you lose the ability to express "might not be there."
+
+**Can a reference be null?** A reference that binds to a null dereference is undefined behavior — always check before dereferencing a pointer you bind to a reference.
+
+<CTA language="cpp" label="Practice C and C++ questions with the AI interviewer" />
+
+## Related guides
+
+- [Top C++ Interview Questions](/blog/top-cpp-interview-questions) — RAII, move semantics, smart pointers
+- [C++ move semantics explained](/blog/cpp-move-semantics-explained)

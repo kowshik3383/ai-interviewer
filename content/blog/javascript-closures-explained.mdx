@@ -1,0 +1,104 @@
+---
+title: "JavaScript Closures Explained (with Code)"
+description: "Closures in JavaScript explained plainly — lexical scope, what the function 'remembers', and the real-world uses interviewers probe."
+slug: javascript-closures-explained
+date: "2026-07-18"
+updated: "2026-07-18"
+language: javascript
+level: junior
+tags: [javascript, closures, fundamentals]
+excerpt: "A closure is a function that remembers its lexical scope. Here's the mental model, the code, and where closures show up in real interviews."
+---
+
+A closure is a function that retains access to its lexical scope after that scope has finished executing. The phrase sounds mystical; the reality is that every function in JavaScript is, or can be, a closure. This is the mental model that makes it trivial.
+
+## The mental model
+
+When a function is created, it captures a reference to the scope in which it was *defined* — not called. Even after that scope returns, the function carries the environment with it.
+
+```js
+function makeCounter() {
+  let count = 0;
+  return function () {
+    count++;
+    return count;
+  };
+}
+
+const counter = makeCounter();
+counter(); // 1
+counter(); // 2
+```
+
+`makeCounter` has finished running, yet the returned function still reads and writes `count`. The inner function holds a reference to the outer function's scope — a closure.
+
+## Why this is possible
+
+JavaScript uses lexical scoping: an inner function can access variables of its enclosing scopes, and those scopes stay alive as long as any function that references them is alive. It's not magic — it's how every nested function works.
+
+```js
+function outer(x) {
+  function inner(y) {
+    return x + y; // inner "sees" x via lexical scope
+  }
+  return inner;
+}
+const addFive = outer(5);
+addFive(2); // 7
+```
+
+This is also how `currying` and function factories work — `outer` pins `x` in a closure, and `inner` adds `y`.
+
+## The three uses interviewers actually ask about
+
+**1. Private state.** There's no true `private` in classic JavaScript, but closures give you state that only a returned API can touch:
+
+```js
+function createBankAccount(initial) {
+  let balance = initial;
+  return {
+    deposit: (n) => (balance += n),
+    withdraw: (n) => (balance -= n),
+    getBalance: () => balance,
+  };
+}
+```
+
+`balance` is unreachable from outside — effectively private.
+
+**2. Memoization.** A cache lives in the closure:
+
+```js
+function memoize(fn) {
+  const cache = {};
+  return (arg) => (cache[arg] ??= fn(arg));
+}
+```
+
+**3. Event handlers and callbacks.** A closure lets a handler remember the data it was created with — the reason every `onClick` in a loop needs its own binding.
+
+## The classic trap: closures and loops
+
+```js
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}
+// 3 3 3
+```
+
+`var` is function-scoped, so all three callbacks close over the *same* `i`, which is `3` by the time they run. With `let`, each iteration gets its own binding, so it prints `0 1 2`. The fix options: `let`, an IIFE, or `.bind(i)`.
+
+## Memory-leak angle
+
+A closure keeps its whole scope alive. If it captures a large object, that object lives as long as the function does. This is the "closure causes a leak" question — the closure itself isn't a leak, but a long-lived callback that captured heavy state can be. Release references when you're done with the handler.
+
+## The interview answer
+
+"A closure is a function that remembers the scope where it was created, even after that scope exits. It enables private state, factories, and memoization, and it's why loop variables need their own bindings. The cost is that the captured scope stays in memory for the closure's lifetime."
+
+<CTA language="javascript" label="Practice closure questions with the AI interviewer" />
+
+## Related guides
+
+- [Top JavaScript Interview Questions](/blog/top-javascript-interview-questions) — `this` binding, promises, prototypes
+- [How the event loop works](/blog/javascript-event-loop-explained)

@@ -1,0 +1,200 @@
+---
+title: "Top 30 JavaScript Interview Questions (with Answers)"
+description: "The JavaScript interview questions interviewers actually ask, with explanations and code — closures, the event loop, this binding, promises, and more."
+slug: top-javascript-interview-questions
+date: "2026-08-12"
+updated: "2026-08-12"
+language: javascript
+level: mid
+tags: [javascript, interview-questions, coding-interview]
+featured: true
+excerpt: "30 JavaScript interview questions across closures, the event loop, this binding, promises, and prototypal inheritance — each with the answer interviewers want to hear."
+---
+
+Most JavaScript interview questions test three things: whether you understand how the language actually executes, whether you can reason about asynchronous behavior, and whether you can explain *why* — not just what. The questions below are ordered the way a technical interview tends to flow, from warm-up fundamentals to senior-level systems reasoning.
+
+## 1–5: Scope, hoisting, and closures
+
+**1. What is a closure?**
+
+A closure is a function that retains access to its lexical scope even after that scope has finished executing.
+
+```js
+function counter() {
+  let count = 0;
+  return () => ++count;
+}
+const c = counter();
+c(); // 1
+c(); // 2
+```
+
+The inner arrow function "remembers" `count` because the function object carries a reference to its creation scope. Interviewers follow up on where closures are used in practice: private variables, currying, and memoization.
+
+**2. Explain the difference between `var`, `let`, and `const`.**
+
+`var` is function-scoped and hoisted to the top of its function (initialized as `undefined`). `let` and `const` are block-scoped and hoisted but sit in a temporal dead zone until the declaration line runs — referencing them before that throws a `ReferenceError`. `const` adds the rule that the binding cannot be reassigned.
+
+**3. What is the temporal dead zone (TDZ)?**
+
+The period between entering a scope and the `let`/`const` declaration executing. Accessing the variable in that window throws, even though the binding "exists":
+
+```js
+console.log(x); // ReferenceError: Cannot access 'x' before initialization
+let x = 5;
+```
+
+**4. What gets hoisted?**
+
+Function declarations are hoisted *entirely* — you can call them before their definition. `var` declarations are hoisted but only the declaration, so the value is `undefined` until assigned. `let`/`const`/`class` are hoisted into the TDZ.
+
+**5. What's the practical difference between a closure and a higher-order function?**
+
+A higher-order function either takes a function as an argument or returns one. A closure is the *mechanism* — the retained scope — that makes the returned function work. `Array.prototype.map` is a higher-order function; the function you pass it might rely on a closure to remember state.
+
+## 6–10: The event loop and asynchronous JavaScript
+
+**6. How does the event loop work?**
+
+JavaScript is single-threaded. The event loop processes one task at a time from the call stack; when the stack is empty, it pushes the oldest queued task. Microtasks (promise callbacks, `queueMicrotask`) are drained completely before the next macrotask (timers, I/O, UI events) runs.
+
+**7. Microtasks vs macrotasks — what's the order?**
+
+Microtasks always run first. After each macrotask, the event loop drains the entire microtask queue before starting the next macrotask.
+
+```js
+console.log("A");                 // sync
+setTimeout(() => console.log("B"), 0);  // macrotask
+Promise.resolve().then(() => console.log("C")); // microtask
+console.log("D");                 // sync
+// Output: A D C B
+```
+
+**8. What is a promise lifecycle?**
+
+A promise is in one of three states: *pending*, *fulfilled*, or *rejected*. It transitions exactly once. The four combinators differ in semantics: `Promise.all` rejects fast on the first failure; `Promise.allSettled` waits for all and reports each result; `Promise.race` settles on the first settlement (either way); `Promise.any` resolves on the first fulfillment and rejects only if all reject.
+
+**9. How does `async`/`await` relate to promises?**
+
+`async` functions always return a promise. `await` pauses execution of the async function until the awaited promise settles, but it never blocks the thread — the rest of the program continues. Under the hood it's `then` chains; `try`/`catch` around `await` maps to `.catch()`.
+
+**10. What's the output of this code?**
+
+```js
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}
+// 3 3 3 (var is function-scoped; all callbacks share the same binding)
+```
+
+With `let`, the output is `0 1 2` because each iteration gets its own binding — the classic closure-in-a-loop question.
+
+## 11–15: `this` binding and prototypes
+
+**11. What determines what `this` refers to?**
+
+The call site, not the definition site. Default: `this` is `undefined` in strict mode, the global object otherwise. Implicit: the object owning the method call. Explicit: `call`/`apply`/`bind`. Arrow functions ignore all of this and use lexical `this` from their enclosing scope.
+
+**12. Difference between `call`, `apply`, and `bind`?**
+
+All three set `this` explicitly. `call(fn, thisArg, arg1, arg2)` takes arguments individually; `apply` takes an array; `bind` returns a new function with `this` permanently bound (it can't be rebound).
+
+**13. What is prototypal inheritance?**
+
+Objects inherit from other objects through the prototype chain. When you access a property, the engine walks the chain until it finds it or hits `null`. ES6 classes are syntax sugar over the same mechanism — `class` doesn't introduce classical inheritance.
+
+**14. `__proto__` vs `prototype`?**
+
+`__proto__` is the actual prototype link of an instance. `prototype` is a property on constructor functions that becomes the `__proto__` of new instances. Every function has a `prototype`; every object has a `__proto__`.
+
+**15. How does `new` work?**
+
+It creates a fresh object, sets its prototype to the constructor's `prototype`, calls the constructor with `this` bound to that object, and returns the object (unless the constructor returns an object explicitly).
+
+## 16–20: Arrays, objects, and modern syntax
+
+**16. What does `reduce` do?**
+
+`reduce` collapses an array into a single value — a sum, an object, a grouped map. It's the escape hatch for when `map`/`filter` aren't enough.
+
+```js
+const counts = ["a", "b", "a"].reduce((acc, x) => {
+  acc[x] = (acc[x] || 0) + 1;
+  return acc;
+}, {});
+```
+
+**17. `Map` vs plain object?**
+
+`Map` preserves insertion order, accepts any key type (not just strings), has a guaranteed `size`, and has a distinct `forEach`. Objects have prototype-chain pollution risk (`{}.constructor` etc.) and keys are coerced to strings.
+
+**18. What are `Symbol` and `WeakMap` used for?**
+
+Symbols create guaranteed-unique property keys, useful for avoiding collisions. `WeakMap` holds keys weakly — entries can be garbage collected when the key object dies — which makes it ideal for private state or metadata attached to objects without leaking memory.
+
+**19. What are generator functions?**
+
+Functions that can pause and resume. `function*` with `yield` produces an iterator that returns values lazily — each `.next()` resumes execution until the next `yield`.
+
+```js
+function* ids() {
+  let i = 0;
+  while (true) yield ++i;
+}
+const g = ids();
+g.next().value; // 1
+```
+
+**20. `==` vs `===`?**
+
+`===` compares without type coercion; `==` coerces. Interviewers care that you avoid `==` and know the coercion pitfalls. (There's a dedicated deep-dive in our `==` vs `===` guide.)
+
+## 21–25: Events and the DOM
+
+**21. What's event bubbling vs capturing?**
+
+Events propagate in three phases: capture (root to target), target, and bubble (target to root). `addEventListener("click", fn, { capture: true })` registers on the capture phase; the default is bubbling. `stopPropagation()` halts the walk; `preventDefault()` cancels the default browser action.
+
+**22. What is event delegation?**
+
+Attaching one listener to a parent to handle events from many children, using `event.target` to decide what reacted. Efficient for dynamic lists — you don't re-attach listeners when items change.
+
+**23. What is a custom event?**
+
+`new CustomEvent("action", { detail })` dispatched via `dispatchEvent()`. Used for decoupled communication between components.
+
+**24. What does `AbortController` do?**
+
+Signals a fetch or listener to cancel: `controller.abort()` fires the `abort` event, and `fetch(url, { signal })` rejects with an `AbortError`. Essential for cleaning up stale requests.
+
+**25. `event.preventDefault()` vs `stopPropagation()`?**
+
+`preventDefault` stops the default browser behavior (e.g., form submission, link navigation). `stopPropagation` stops the event traveling to other elements. They're independent — calling one does not imply the other.
+
+## 26–30: Senior-level reasoning
+
+**26. How would you implement a debounce with immediate execution?**
+
+The senior JavaScript challenge in our bank asks for a debounce supporting `{ immediate: true }`, `.cancel()`, and `.flush()`, preserving `this` and arguments — a leading-edge call, cancelable timer, and a way to force the trailing call through.
+
+**27. What causes a memory leak in JavaScript?**
+
+Retained references to detached DOM nodes, closures that capture large state longer than needed, interval callbacks never cleared, and event listeners never removed. All are "the closure is still alive" in different costumes.
+
+**28. How do you handle deep equality without a library?**
+
+Walk both values: primitives by `Object.is`, arrays element-wise, objects by key count then recursive comparison, and bail on prototype or date/regexp special cases. It's a frequent whiteboard question — your interviewer wants to hear you enumerate the edge cases (cycles, `NaN`, key order) before writing a line.
+
+**29. What's the difference between `structuredClone`, spread, and `JSON.parse(JSON.stringify())`?**
+
+Spread is shallow. `JSON` round-tripping drops `undefined`, functions, and `Date`s (converts to strings). `structuredClone` is a true deep clone supporting most built-in types, though it fails on functions and prototype chains.
+
+**30. How would you make an async operation safe against out-of-order responses?**
+
+Guard with a request id or an `AbortController`: when a new request starts, record its id; when a response arrives, drop it unless it matches the latest id. The code-version answer is your interviewer watching for exactly this in the `Promise.all` challenge.
+
+<CTA language="javascript" label="Practice JavaScript questions with the AI interviewer" />
+
+## How to study these
+
+Working through a list is passive; answering under pressure is where the retention happens. The best sequence is: attempt the question out loud in 2 minutes, compare against the answer, then re-explain the *why* without looking. Pair that with a live practice session where an interviewer probes the follow-ups — the "tell me more about the event loop" moments — and you're training for the actual format, not just the facts.

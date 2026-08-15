@@ -1,0 +1,63 @@
+---
+title: "How to Talk Through Code While Coding (Without Sounding Slow)"
+description: "Narrating your approach during a coding interview is a scored skill. Here's what to say, when, and how to do it without stalling."
+slug: how-to-talk-through-code
+date: "2026-06-18"
+updated: "2026-06-18"
+tags: [coding-interview, communication]
+excerpt: "Talking through code is worth real points — if you narrate the right things at the right moments. Here's the rhythm that works."
+---
+
+Talking while coding is the communication skill of technical interviews, and it's scored whether the interviewer says so or not. But there's a version that helps and a version that hurts. The goal isn't non-stop commentary — it's a *narrative rhythm* that keeps the interviewer inside your reasoning without slowing your typing.
+
+## Why it's scored
+
+Interviewers can't read your mind. If you solve a problem silently, they can only see the output — which tells them nothing about your process. The moment you narrate the approach, you let them score the reasoning: the pattern recognition, the trade-off, the edge-case awareness. Communication is a scored category in most rubrics; the live coding round is where most of it is earned.
+
+## The rhythm: four moments, not a monologue
+
+The mistake is narrating every keystroke. The fix is narrating four specific moments, and staying quiet in between.
+
+**1. Before you start — the approach.** The most important minute of the whole round.
+
+> "I'll restate the problem to confirm — we want the top N per group. I'll use a frequency map, then sort by count. That's O(N log N) time and O(N) space. Alternatively, a heap would make it O(N log K)."
+
+Approach, data structure, complexity, and an alternate — stated before the first line of code. That single minute can carry half the communication points.
+
+**2. At a decision point — the why.** When you choose between two structures, name it in one sentence.
+
+> "I'll use a hash map here rather than an array because the keys are strings."
+
+**3. At an edge case — the catch.** When you handle something non-obvious, say so.
+
+> "I'm guarding the empty case first so the rest of the logic stays simple."
+
+**4. After you finish — the verification.** Never let "it looks right" be the last word.
+
+> "Let me trace it: for this input, the map ends up with three entries, so the top two are... And I'm checking the tie case — if two counts are equal, I sort alphabetically."
+
+## How to narrate without slowing down
+
+The fear is that talking slows you. It doesn't have to:
+
+- **Talk in phrases, not paragraphs.** Full sentences only at the four moments; elsewhere, one-clause annotations ("setting up the map…", "now the sort").
+- **Write first, explain after the block.** For a dense line, type it, then say what it does in a breath. Explaining-after is faster than explaining-while.
+- **If you're stuck, narrate the stuck.** "I'm debating whether to sort or use a heap here" reads as problem-solving, not failure. Silence reads as freeze. (See why candidates freeze.)
+
+## What not to say
+
+- **Don't narrate every keystroke.** "Now I'm typing 'let result = []'" adds noise, and noise makes the interviewer tune out exactly when the signal comes.
+- **Don't hedge your whole approach.** One confident "I'll go with X because Y" beats "we could do X, or maybe Y, it depends."
+- **Don't narrate confusion that isn't real** to seem thoughtful. Interviewers can tell performative thinking from real reasoning.
+
+## The interview answer
+
+"I narrate at four moments: the approach before I start, the why at decision points, edge cases as I handle them, and a verification trace when I finish. Between those, I keep commentary light so it never slows the typing. The key is that the narration carries the reasoning an interviewer needs to score, without turning the round into a running commentary."
+
+<CTA label="Practice talking through code in a live interview" />
+
+## Related guides
+
+- [What interviewers actually score you on](/blog/what-interviewers-score-you-on)
+- [Why candidates freeze during interviews](/blog/why-candidates-freeze-in-interviews)
+- [The technical interview format walkthrough](/blog/technical-interview-format-walkthrough)

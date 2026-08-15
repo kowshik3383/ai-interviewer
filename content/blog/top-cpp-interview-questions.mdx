@@ -1,0 +1,149 @@
+---
+title: "Top 25 C++ Interview Questions (with Answers)"
+description: "C++ interview questions on RAII, smart pointers, move semantics, virtual functions, templates, and concurrency — with code answers."
+slug: top-cpp-interview-questions
+date: "2026-08-04"
+updated: "2026-08-04"
+language: cpp
+level: mid
+tags: [cpp, c-plus-plus, interview-questions]
+featured: true
+excerpt: "25 C++ interview questions covering RAII, smart pointers, move semantics, vtables, templates, and modern C++20 features."
+---
+
+C++ interviews separate candidates faster than almost any other language, because the language's power is also its footgun count. The questions here test whether you understand ownership, lifetimes, and performance — the three things C++ is actually about.
+
+## 1–5: RAII and memory management
+
+**1. What is RAII?**
+
+Resource Acquisition Is Initialization — bind a resource's lifetime to a stack object's lifetime. The constructor acquires; the destructor releases. When the object goes out of scope (even via exception), the resource is freed automatically.
+
+**2. `unique_ptr` vs `shared_ptr` vs `weak_ptr`?**
+
+`unique_ptr` — exclusive ownership, non-copyable, movable. `shared_ptr` — shared ownership via reference counting; the object dies when the last owner does. `weak_ptr` — a non-owning observer into a `shared_ptr`'s lifetime, used to break cycles.
+
+**3. When does a `shared_ptr` leak?**
+
+Cycles: A owns B and B owns A. Neither count reaches zero. The fix is a `weak_ptr` on one side. That cycle-breaking insight is a senior-level checkpoint.
+
+**4. What's the cost of `shared_ptr`?**
+
+Reference counting is thread-safe but atomic — each copy/assignment is an atomic increment/decrement. Copying a `shared_ptr` is far more expensive than copying a `unique_ptr`. For hot paths, `unique_ptr` or raw observers win.
+
+**5. What is a raw pointer still good for?**
+
+Non-owning observation — a function that reads, not owns. The rule of thumb: owning pointers should be smart pointers; raw pointers express "borrowing" only.
+
+## 6–10: Move semantics and the Rule of Five
+
+**6. What is move semantics?**
+
+Moving transfers ownership of resources instead of copying them. The move constructor steals the other object's heap buffer and nulls the source, leaving the copy to make a full duplicate.
+
+**7. What are rvalue references?**
+
+`T&&` — references bound only to temporaries (rvalues). They make move constructors possible: the compiler routes copy-from-temporary into a move when the source is an rvalue.
+
+**8. What is the Rule of Five?**
+
+If you define any of the destructor, copy constructor, copy assignment, move constructor, or move assignment, you typically need all five — because they manage a resource together. The Rule of Zero says: design with smart pointers/STL containers so you define none of them.
+
+**9. What does `std::move` actually do?**
+
+It's a cast — `static_cast<T&&>(x)` — that marks an lvalue as "safe to move from." It moves nothing by itself; it enables the move constructor/assignment to run. A classic trap: after `std::move`, the source is in a valid-but-unspecified state.
+
+**10. `std::move` vs `std::forward`?**
+
+`std::move` unconditionally casts to rvalue. `std::forward` conditionally casts — it preserves the value category of a forwarding reference, which is what perfect forwarding needs.
+
+## 11–15: Virtuals, const, and STL
+
+**11. What is a virtual function?**
+
+A function resolved at runtime through the vtable — the object's actual type decides which implementation runs, even through a base pointer.
+
+**12. What is a vtable and vptr?**
+
+The vtable is a per-class array of function pointers; the vptr is a hidden pointer in each object to its class's vtable. Virtual dispatch is: dereference vptr → index vtable → call. This adds an indirect call and costs inlining/optimization.
+
+**13. When must a destructor be virtual?**
+
+When you delete a derived object through a base pointer. A non-virtual base destructor leads to undefined behavior — the derived destructor never runs.
+
+**14. What is a pure virtual function and an abstract class?**
+
+A pure virtual (`= 0`) declares an interface with no implementation; a class with any pure virtual is abstract and cannot be instantiated. Derived classes must implement it (or stay abstract).
+
+**15. `const` vs `constexpr`?**
+
+`const` means "not modified after initialization" — evaluated at compile or runtime. `constexpr` means "can be evaluated at compile time" — eligible for constant folding. A `constexpr` function can run at compile time when given constant arguments.
+
+## 16–20: Templates, metaprogramming, and modern features
+
+**16. What are templates?**
+
+Compile-time code generation parameterized by type — `std::vector<int>` and `std::vector<std::string>` are different instantiations of the same template. No runtime cost; the compiler emits one copy per instantiation.
+
+**17. What is SFINAE?**
+
+Substitution Failure Is Not An Error — if substituting template arguments fails in a function's signature, that overload is simply removed rather than erroring. The classic tool for constraining which overloads exist.
+
+**18. What replaced SFINAE in C++20?**
+
+Concepts and `requires` clauses — named, readable constraints:
+
+```cpp
+template <typename T>
+requires std::integral<T>
+T add(T a, T b) { return a + b; }
+```
+
+Concepts give clearer errors and overload resolution than SFINAE tricks.
+
+**19. `std::vector` vs `std::list`?**
+
+`vector` is a contiguous growable array — cache-friendly, O(1) random access, amortized O(1) push_back. `list` is a doubly-linked list — O(1) splice, O(N) access, cache-hostile. Modern guidance: reach for `vector` first; almost every "use a list" instinct is wrong in 2026.
+
+**20. What are `std::string_view` and `std::span`?**
+
+Borrowing views — `string_view` is a `{ptr, len}` over a string (no copy); `span` is a `{ptr, len}` over a contiguous range. They make APIs non-owning and zero-copy. The trap: views don't own — the underlying data must outlive them.
+
+## 21–25: Concurrency and senior reasoning
+
+**21. `std::mutex` and `std::lock_guard`?**
+
+`lock_guard` is RAII for a mutex — locks in the constructor, unlocks in the destructor, exception-safe. Use it (or `scoped_lock`) over manual `lock()`/`unlock()`.
+
+**22. What is a data race?**
+
+Two or more threads access the same memory location concurrently, at least one writes, and there's no synchronization. It's undefined behavior — not "a bug you can debug," but "the program may do anything."
+
+**23. What is `std::atomic`?**
+
+Lock-free primitive operations — `load`, `store`, `fetch_add` — with configurable memory ordering (`acquire`/`release`). The alternative to mutexes for counters and flags, when the operation is a single atomic op.
+
+**24. What is a spinlock and when would you use it?**
+
+A lock that busy-waits on an atomic flag instead of sleeping the thread:
+
+```cpp
+class SpinLock {
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+public:
+    void lock() { while (flag.test_and_set(std::memory_order_acquire)); }
+    void unlock() { flag.clear(std::memory_order_release); }
+};
+```
+
+Spinning wastes CPU but avoids context-switch cost — right for very short critical sections, wrong for anything that blocks meaningfully.
+
+**25. What is memory ordering, in one sentence?**
+
+The promise about which memory operations other threads observe before/after the atomics — `acquire`/`release` pairs establish happens-before relationships. Getting this wrong is how "lock-free" code becomes subtly broken.
+
+<CTA language="cpp" label="Practice C++ questions with the AI interviewer" />
+
+## How to study these
+
+C++ rewards building the mental model of lifetimes and ownership before touching syntax. Write the answers to the ownership questions (Rule of Five, RAII, cycle-breaking) as small compilable programs, then practice the interview format where you explain each one while the interviewer probes the "what if" — that follow-up pressure is where C++ candidates either shine or collapse.

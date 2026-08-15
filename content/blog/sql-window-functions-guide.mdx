@@ -1,0 +1,108 @@
+---
+title: "SQL Window Functions: A Practical Guide"
+description: "Window functions in SQL — ROW_NUMBER, RANK, LAG, LEAD, rolling sums, and frame clauses — with real queries and interview answers."
+slug: sql-window-functions-guide
+date: "2026-07-04"
+updated: "2026-07-04"
+language: sql
+level: mid
+tags: [sql, window-functions, database]
+excerpt: "Window functions compute values across related rows without collapsing them. Here's how they work, the functions, and the frames."
+---
+
+A window function computes a value across a set of rows *related to the current row* — without collapsing those rows into a single group. That last part is the entire difference from `GROUP BY`: the result has the same number of rows as the input.
+
+## The anatomy of a window function
+
+```sql
+ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) AS rank_in_dept
+```
+
+Three parts: the **function** (`ROW_NUMBER()`), the **`OVER` clause**, and inside it the **`PARTITION BY`** (split into groups) and **`ORDER BY`** (order within each partition, which also defines the frame).
+
+## The core functions
+
+**Ranking:** `ROW_NUMBER()`, `RANK()`, `DENSE_RANK()`, `NTILE()`.
+
+**Offset:** `LAG(expr, n)` — value *n* rows before; `LEAD(expr, n)` — value *n* rows after. The classic "previous month's value" or "next day's price" tool.
+
+**Aggregates as windows:** `SUM()`, `AVG()`, `COUNT()`, `MIN()`, `MAX()` used with `OVER` — running totals, rolling averages.
+
+**First/last in partition:** `FIRST_VALUE`, `LAST_VALUE` (last requires a frame clause to behave intuitively).
+
+## ROW_NUMBER vs RANK vs DENSE_RANK
+
+```sql
+SELECT name, score,
+       ROW_NUMBER() OVER (ORDER BY score DESC) AS rn,
+       RANK()       OVER (ORDER BY score DESC) AS rk,
+       DENSE_RANK() OVER (ORDER BY score DESC) AS dr
+FROM students;
+```
+
+| name | score | rn | rk | dr |
+| --- | --- | --- | --- | --- |
+| Ana | 95 | 1 | 1 | 1 |
+| Ben | 95 | 2 | 1 | 1 |
+| Cid | 90 | 3 | 3 | 2 |
+
+`ROW_NUMBER` gives unique positions even on ties. `RANK` ties share a number and skip the next. `DENSE_RANK` ties share a number without gaps.
+
+## The frame clause
+
+For aggregate windows, the frame defines *which rows* the function sees. The default is `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` — but for `AVG` and others you'll often want explicit frames:
+
+```sql
+-- Rolling 7-day average: this row + 6 prior rows
+SELECT date, amount,
+       AVG(amount) OVER (
+           ORDER BY date
+           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ) AS rolling_7d
+FROM daily_revenue;
+```
+
+`ROWS` counts physical rows; `RANGE` counts by value. The distinction trips people up in interviews.
+
+## Running total
+
+```sql
+SELECT date, amount,
+       SUM(amount) OVER (ORDER BY date) AS running_total
+FROM revenue;
+```
+
+Without a `PARTITION BY`, the whole result set is one partition, so this accumulates down the ordered rows.
+
+## A real pattern: top-N per group
+
+"Top 2 earners in each department":
+
+```sql
+WITH ranked AS (
+  SELECT name, dept, salary,
+         ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) AS rn
+  FROM employees
+)
+SELECT name, dept, salary FROM ranked WHERE rn <= 2;
+```
+
+The CTE + window + outer `WHERE rn <= 2` is *the* most-asked window-function pattern in interviews.
+
+## Window function vs GROUP BY
+
+- `GROUP BY` reduces rows — one row per group.
+- Window functions keep every row and attach the computed value.
+
+If you need to keep individual rows *and* see group context (a rank, a share of total, a previous value), you need a window function. Interviewers listen for that distinction.
+
+## The interview answer
+
+"A window function computes a value over a partition of rows while preserving each row. `PARTITION BY` splits the data, `ORDER BY` orders within partitions and defines the frame, and the frame clause — `ROWS BETWEEN … PRECEDING AND CURRENT ROW` — controls exactly which rows are included for aggregates. It's the tool for running totals, rolling averages, rankings, and previous/next-row lookups."
+
+<CTA language="sql" label="Practice SQL window questions with the AI interviewer" />
+
+## Related guides
+
+- [Top SQL Interview Questions](/blog/top-sql-interview-questions) — joins, indexing, transactions
+- [SQL JOIN types explained](/blog/sql-join-types-explained)

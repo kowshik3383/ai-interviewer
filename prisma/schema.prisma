@@ -1,0 +1,56 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  avatar    String?
+  sessions  Session[]
+  createdAt DateTime  @default(now())
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidateName String?
+  language     String    // "javascript" | "python" | "html" | "css" | "java" | "c" | "cpp" | "csharp" | "sql"
+  difficulty   String    // "junior" | "mid" | "senior"
+  state        String    // INTRO, WARMUP_QUESTION, CORE_QUESTIONS, CODING_CHALLENGE, FOLLOW_UPS, WRAP_UP, REPORT_GENERATED
+  finalScore   Float?
+  recommendation String? // "strong_hire" | "hire" | "lean_no" | "no_hire"
+  summary      String?
+  strengths    String?   // JSON string array
+  weaknesses   String?   // JSON string array
+  categoryScores String? // JSON object { correctness, depth, communication, problemSolving }
+  status       String    @default("in_progress") // "in_progress" | "completed" | "abandoned"
+  turns        Turn[]
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+}
+
+model Turn {
+  id           String   @id @default(cuid())
+  sessionId    String
+  session      Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role         String   // "ai" | "candidate" | "system"
+  content      String
+  score        Float?   // set on candidate turns after evaluation (0-10)
+  evalNotes    String?
+  actionTaken  String?  // "advance" | "follow_up" | "escalate_difficulty" | "wrap_up"
+  followUpType String?  // "CLARIFY" | "PROBE_DEEPER" | "CHALLENGE" | "REDIRECT" | "AFFIRM_AND_ADVANCE" | "CONNECT"
+  modelUsed    String?  // which OpenRouter model answered this turn
+  codeSnapshot String?  // if this turn included a code run
+  stdinSnapshot String?
+  stdoutSnapshot String?
+  stderrSnapshot String?
+  exitCodeSnapshot Int?
+  createdAt    DateTime @default(now())
+}

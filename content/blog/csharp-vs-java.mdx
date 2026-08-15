@@ -1,0 +1,99 @@
+---
+title: "C# vs Java: The Differences That Matter in Interviews"
+description: "C# and Java compared for interviews — language features, runtime, and ecosystem differences that candidates actually get asked about."
+slug: csharp-vs-java
+date: "2026-07-08"
+updated: "2026-07-08"
+language: csharp
+level: junior
+tags: [csharp, java, comparison]
+excerpt: "C# and Java look alike, but the differences — value types, properties, LINQ, delegates, records — show up constantly in interviews."
+---
+
+C# and Java share a common ancestor and a similar shape: both are garbage-collected, statically-typed, JVM/CLR-run languages with curly-brace syntax. But the differences are where interviews go. If you know one, the other is learnable in days — knowing the *differences* is the interview answer.
+
+## The one-line summary
+
+**Java is the conservative platform language with a massive ecosystem; C# is the feature-forward language that ships more conveniences faster.** Both compile to bytecode, both have a mature standard library, both are GC'd. The differences below are the ones worth naming.
+
+## Value types and `struct`
+
+C# has true value types:
+
+```csharp
+struct Point { public int X, Y; }
+```
+
+A `struct` is copied by value and can live on the stack — no heap allocation, no GC pressure. Java has no user-defined value types (project Valhalla is in progress); all objects are heap-allocated references. The `struct`/`record struct` answer is a classic C#-interview differentiator.
+
+## Properties
+
+C# has first-class properties:
+
+```csharp
+public string Name { get; set; } = "";
+public decimal Salary { get; private set; }
+```
+
+Java's answer is getters/setters — `private String name; public String getName() {...}`. C# bundles the accessors into property syntax, and can enforce readonly (`get` only), init-only, and computed values.
+
+## LINQ vs streams
+
+C# has LINQ — query syntax and extension methods over `IEnumerable<T>`, with deferred execution:
+
+```csharp
+var top = employees
+    .Where(e => e.Salary > 80000)
+    .OrderByDescending(e => e.Salary)
+    .Select(e => e.Name);
+```
+
+Java has the Stream API (`filter`, `map`, `sorted`, `collect`), which is similar in spirit but verbose and different in details (parallel streams, no query syntax). Interviewers often ask the equivalent of one in terms of the other.
+
+## Delegates, events, and lambdas
+
+C# has first-class delegates (`Func<T>`, `Action<T>`) and the event model built on them. Java has functional interfaces and lambdas, but events are idiomatic to C#. The "what's the difference between a delegate and an event" question has no Java equivalent.
+
+## Records
+
+Both modern languages now have records:
+
+```csharp
+public record Person(string Name, int Age);
+```
+
+```java
+public record Person(String name, int age) {}
+```
+
+Both give value equality and immutability by default. The C# twist: `with` expressions for non-destructive mutation, and `record struct` for value-type records. Java's records are the closer relative of C# records than of Java's old `POJO` boilerplate.
+
+## Nullable handling
+
+Both have evolved: Java has `Optional` and now pattern matching; C# has nullable reference types (`string?`) enforced at compile time, plus the null-coalescing operator `??` and null-conditional `?.`:
+
+```csharp
+var name = person?.Name ?? "unknown";
+```
+
+## Runtime differences
+
+| | Java | C# |
+| --- | --- | --- |
+| Runtime | JVM (HotSpot, GraalVM) | .NET (CoreCLR) |
+| Default GC | G1 (ZGC for low latency) | Workstation/Server GC, generations |
+| Projections | GraalVM native image | NativeAOT, ahead-of-time compile |
+| Cross-platform | Excellent | Excellent (.NET 8+) |
+
+The real divide is ecosystem: Java is the default for enterprise/backend infrastructure; C# dominates Windows/.NET shops, Unity game dev, and Azure stacks. "Which would I pick?" answers are context, not religion.
+
+## The interview answer
+
+"Both are GC'd, statically-typed languages with mature runtimes. C# moves faster on language features — value types with `struct`, properties, LINQ, delegates and events, and records with `with` expressions. Java leads on ecosystem reach and conservative stability. The right choice depends on the stack you're joining, not on one being 'better.'"
+
+<CTA language="csharp" label="Practice C# and Java questions with the AI interviewer" />
+
+## Related guides
+
+- [Top C# Interview Questions](/blog/top-csharp-interview-questions) — LINQ, async/await, .NET GC
+- [Top Java Interview Questions](/blog/top-java-interview-questions) — JVM memory, collections, concurrency

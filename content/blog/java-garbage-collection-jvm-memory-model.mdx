@@ -1,0 +1,56 @@
+---
+title: "Java Garbage Collection and the JVM Memory Model Explained"
+description: "How the JVM lays out memory and collects garbage — Eden, Survivor, Old gen, Metaspace, G1 vs ZGC — the Java interview must-know."
+slug: java-garbage-collection-jvm-memory-model
+date: "2026-07-14"
+updated: "2026-07-14"
+language: java
+level: mid
+tags: [java, jvm, garbage-collection]
+excerpt: "The JVM memory model and GC explained — generations, minor vs major collections, and when G1 or ZGC is the right collector."
+---
+
+The JVM memory model and garbage collector are the pair of Java interview topics that separate juniors from mid-level candidates. The core idea is elegant: **most objects die young, so split the heap by age and collect the young part aggressively.** Everything else follows.
+
+## The heap, generation by generation
+
+Objects are born in **Eden**. When Eden fills, a **minor (Young) GC** runs: live objects are copied to a **Survivor space** (S0 or S1, which swap roles), and each surviving object's *age* increments. Objects that survive enough Young collections promote to **Old (Tenured) generation**. This is the generational hypothesis in action — most objects are short-lived, so most never leave the nursery.
+
+**Metaspace** (since Java 8) holds class metadata — loaded classes, methods, field layouts. It's off-heap and grows with class loading; it's collected when classes are unloaded.
+
+## The two kinds of collections
+
+- **Minor GC** — collects the Young generation only. Fast, frequent. Most objects die here, so it reclaims a lot cheaply.
+- **Major / Full GC** — collects Old generation (and often the whole heap). Slower, less frequent. This is the one that causes the "stop-the-world" pause people optimize away.
+
+## The root problem: stop-the-world
+
+During a collection, application threads must be paused while the collector walks the object graph from **GC roots** — thread stacks, static fields, JNI references. The art of modern collectors is shrinking that pause.
+
+## G1 vs ZGC (the modern choice)
+
+**G1 (default since Java 9)** — divides the heap into equal regions and collects them incrementally, prioritizing the regions with the most garbage (hence "garbage-first"). Predictable pause targets: you say "stop for at most 200ms," and G1 tries to honor it by collecting a bounded set of regions per cycle. Good throughput-to-pause balance.
+
+**ZGC** — a concurrent, low-latency collector. It does nearly all work while application threads run, using load barriers and colored pointers, targeting sub-millisecond pauses even on multi-hundred-GB heaps. The cost is higher CPU overhead and slightly lower throughput. When your SLA is "no perceptible pause," ZGC.
+
+The interview answer: "G1 for the default balance of throughput and bounded pauses; ZGC when pause time is the hard constraint, at the cost of CPU and throughput."
+
+## What causes an OutOfMemoryError
+
+- **`Java heap space`** — allocation failed; the heap is genuinely full (a leak or oversized footprint).
+- **`GC overhead limit exceeded`** — the GC is spending ~98% of time collecting and reclaiming almost nothing — usually a real leak.
+- **`Metaspace`** — class metadata exhausted, common with dynamic class generation.
+- **Native / direct memory** — off-heap allocations exhausting process memory.
+
+The senior differentiator: distinguish *leak* (retained references that should have been released) from *capacity* (an honestly full cache). Leaks are bugs; capacity is a tuning knob.
+
+## How to reason about GC in an interview
+
+The score-raising shape: "The JVM splits the heap into generations — Eden, Survivor, Old — because most objects die young. Minor GCs handle the nursery; Full GCs handle Old gen. G1 balances throughput and pause; ZGC trades CPU for sub-millisecond pauses. To debug, I'd look at GC logs or flight recorder to see if collection frequency is climbing, which indicates retention."
+
+<CTA language="java" label="Practice JVM questions with the AI interviewer" />
+
+## Related guides
+
+- [Top Java Interview Questions](/blog/top-java-interview-questions) — collections, concurrency, modern Java
+- [Java HashMap internals](/blog/java-hashmap-internals) — hashing, collisions, load factor, resize

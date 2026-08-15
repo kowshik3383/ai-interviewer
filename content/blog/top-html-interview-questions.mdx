@@ -1,0 +1,108 @@
+---
+title: "Top 20 HTML Interview Questions (with Answers)"
+description: "HTML interview questions on semantic elements, accessibility, forms, SEO, and the DOM — with the markup answers interviewers expect."
+slug: top-html-interview-questions
+date: "2026-07-28"
+updated: "2026-07-28"
+language: html
+level: junior
+tags: [html, frontend, accessibility, interview-questions]
+featured: true
+excerpt: "20 HTML interview questions covering semantic markup, accessibility, forms, SEO, and modern HTML5 features."
+---
+
+HTML interviews look easy — then an interviewer asks you to build an accessible modal or explain why your form breaks for a screen reader, and the simplicity evaporates. These are the questions that separate "can write HTML" from "understands HTML."
+
+## 1–5: Semantic markup
+
+**1. Why use semantic elements?**
+
+Semantic elements (`<article>`, `<nav>`, `<header>`, `<main>`, `<aside>`, `<section>`, `<footer>`) carry meaning for browsers, assistive tech, SEO, and future maintainers. A `<div>` says nothing; `<nav>` says "this is navigation." Screen readers expose landmarks built from semantics.
+
+**2. `<article>` vs `<section>` vs `<div>`?**
+
+`<article>` — a self-contained composition (a blog post, a comment, a product card) that makes sense on its own. `<section>` — a thematic grouping, ideally with a heading. `<div>` — pure layout with no meaning. Use the semantics, then the div.
+
+**3. What's the document outline problem?**
+
+Heading order (`h1` → `h2` → `h3`, never skipping levels) builds an accessible outline. Skipping from `h1` to `h3` confuses screen-reader users. The h1-per-page question — one, describing the page — is a classic.
+
+**4. When do you use `<section>` vs `<aside>`?**
+
+`<section>` is a thematic part of the document's main flow. `<aside>` is tangentially related content — sidebars, pull quotes, related links. The distinction is about whether the content is part of the main narrative.
+
+**5. What is the difference between `<b>`/`<i>` and `<strong>`/`<em>`?**
+
+`<strong>` and `<em>` carry meaning (importance, emphasis — read differently by screen readers). `<b>` and `<i>` are purely presentational (bold/italic without meaning). In 2026, if it's meaningful emphasis, use the semantic tags.
+
+## 6–10: Accessibility
+
+**6. What is ARIA and when do you use it?**
+
+ARIA (Accessible Rich Internet Applications) adds attributes (`role`, `aria-label`, `aria-live`) that give assistive tech information about elements. First rule of ARIA: use native HTML elements when they exist — a native `<button>` beats `role="button"` on a `<div>`.
+
+**7. What is `aria-live`?**
+
+Declares a region that assistive tech should announce when its content changes — for toasts, loading states, dynamic results. `aria-live="polite"` waits; `aria-live="assertive"` interrupts. Used sparingly.
+
+**8. How do you make a custom widget accessible?**
+
+Give it a role (`role="slider"`, `role="tablist"`), `aria-*` state (`aria-valuenow`, `aria-selected`), keyboard support (arrows for sliders, Tab to enter/exit), and focus management. The pattern: mirror native semantics with ARIA, add keyboard, manage focus.
+
+**9. What is focus management?**
+
+Moving and tracking focus when the UI changes — opening a dialog moves focus into it, closing returns it, toggling nav moves focus to the panel. Poor focus management is the #1 a11y failure in SPAs.
+
+**10. Why does every image need meaningful `alt` text?**
+
+Screen readers announce `alt` in place of the image. Decorative images get `alt=""` (empty) so they're skipped; informative images get descriptive alt; buttons-with-icons get alt describing the action.
+
+## 11–15: Forms and validation
+
+**11. Why does every input need a `<label>`?**
+
+A `label` with `for`/`id` pairing (or wrapping the input) gives the input an accessible name, a click target that focuses the input, and — critically — a screen-reader announcement. Inputs without labels are unannounced.
+
+**12. Native vs JavaScript form validation?**
+
+Modern HTML5 validation — `required`, `pattern`, `type="email"`, `min`/`max`, `minlength` — is free, accessible, and works without JS. JavaScript adds custom validation messages (`setCustomValidity`), cross-field logic, and async checks. The pro answer: use native first, augment with JS.
+
+**13. What is `novalidate` for?**
+
+Disables native validation so a custom validation script takes over — common when you need a uniform validation UX across browsers. The form still needs *some* validation; you're replacing, not removing it.
+
+**14. What input types exist and why use them?**
+
+`email`, `url`, `tel`, `number`, `date`, `range`, `color`, `file` — each gives native keyboard (mobile), validation, and semantics. `type="email"` on mobile brings the email keyboard. The more specific the type, the better the native experience.
+
+**15. What is `autocomplete` and why does it matter?**
+
+`autocomplete="name"`, `"email"`, `"cc-number"` tells the browser what to autofill — hugely important for real forms (password managers, address autofill) and an accessibility win for users with motor or cognitive impairments.
+
+## 16–20: SEO, multimedia, and storage
+
+**16. What meta tags matter for SEO?**
+
+`title`, `meta name="description"`, Open Graph (`og:title`, `og:description`, `og:image`), Twitter cards, `robots`, `canonical`, and `viewport`. Structured data (JSON-LD) for rich results.
+
+**17. What is the `<picture>` element?**
+
+A container for multiple `<source>` elements + one `<img>` — letting the browser pick the best image by format and size. Combined with `srcset` and `sizes` for responsive images: serve small images to small screens, modern formats (WebP/AVIF) to supporting browsers.
+
+**18. `localStorage` vs `sessionStorage` vs `IndexedDB`?**
+
+`localStorage` — persistent, ~5MB, strings only. `sessionStorage` — same, but per-tab, cleared on close. `IndexedDB` — async, large, structured objects, indexes, transactions. The follow-up is usually about *where* each is appropriate.
+
+**19. What is a service worker?**
+
+A script the browser runs in the background, controlling the network layer for your origin — the engine behind offline support, caching, background sync, and push notifications. Progressive Web Apps are built on it.
+
+**20. What is the Shadow DOM?**
+
+DOM encapsulation — a subtree with its own scope, so its IDs, styles, and structure can't leak out. Together with `<template>` and `<slot>`, it's the foundation of Web Components. The follow-up: why does it matter? Isolation without the iframe's isolation cost.
+
+<CTA language="html" label="Practice HTML questions with the AI interviewer" />
+
+## How to study these
+
+HTML and accessibility questions are best practiced by *building* — an accessible form, a product card, a dialog — and then auditing your own markup for labels, landmarks, and focus. Practice live where an interviewer watches you write markup and probes the accessibility decisions — that's the format these roles actually test.

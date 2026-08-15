@@ -1,0 +1,55 @@
+---
+title: "Java HashMap Internals: Buckets, Hashing, and Resizing"
+description: "How HashMap actually works — hashing, buckets, chaining vs treeification, load factor and resize — with the interview answers worth memorizing."
+slug: java-hashmap-internals
+date: "2026-07-12"
+updated: "2026-07-12"
+language: java
+level: mid
+tags: [java, collections, hashmap]
+excerpt: "HashMap is Java's most-queried collection. Here's the internals — hashCode, buckets, collision handling, load factor, and resize — and the interview answers."
+---
+
+`HashMap` is the single most-queried collection in Java interviews, and the questions go deep fast: what happens on collision, why does load factor matter, what changed with treeification. The internals aren't that complex once you see the chain of decisions. Here's the whole story.
+
+## The two fundamental pieces
+
+A `HashMap` is an **array of buckets**, plus a **hash function** that decides which bucket an entry lands in. It's two operations under the hood:
+
+1. `hashCode()` produces an `int` for the key.
+2. The map derives a **bucket index** from that hash — `hash & (n - 1)` when the bucket array size `n` is a power of two — and stores the entry there.
+
+That index is why lookups are average O(1): one hash, one arithmetic step, one bucket access. No scanning.
+
+## Collisions and chaining
+
+Two different keys can produce the same bucket index — that's a **collision**. The classic fix is **chaining**: each bucket holds a list (a `Node` chain) of entries, and the map scans that chain linearly. A single bucket with many entries makes the "O(1)" degrade toward O(N) — which is exactly why a good `hashCode` matters. Uniform hashing spreads keys across buckets; a bad hash piles everything into one.
+
+The hidden subtlety interviewers love: buckets hold `Node` chains until they get long — when a bucket's chain exceeds 8 entries and the array is at least 64 long, Java **treeifies** that bucket into a red-black tree, dropping the worst-case chain scan from O(N) to O(log N). This is the "since Java 8" answer that separates candidates who read from candidates who practiced.
+
+## Why `equals` and `hashCode` must agree
+
+The contract is what makes lookups correct:
+
+- If two keys are `equals()`, they **must** have the same `hashCode`.
+- The map first compares by hash, then by `equals`, on the chain.
+
+Break it — e.g., override `equals` but not `hashCode` — and a key stored earlier is never found, because the map computes the wrong bucket on lookup. That's the classic "I put it in but `get` returns null" bug, and it's the single most-asked behavioral probe around maps.
+
+## Load factor and resize
+
+A map can't grow its array every insert, so it uses a **load factor** — default `0.75` — as the trigger: when entries exceed `capacity × load factor`, the map **resizes**, doubling the bucket array and re-hashing every entry into the new indexes. It's expensive (O(N)), which is why the constructor lets you pre-size when you know the entry count: `new HashMap<>(expectedSize)` avoids repeated resizes.
+
+The trade-off to name: a small array (low capacity) saves memory but collides more; a large array uses memory to buy fewer collisions and faster lookups. Load factor is the memory-vs-speed knob.
+
+## The interview answer
+
+"`HashMap` is an array of buckets. The key's `hashCode` derives a bucket index, and collisions are handled by chaining — buckets hold node chains, which treeify to red-black trees past 8 entries so worst case stays O(log N). `equals` and `hashCode` must agree or lookups fail. When entries exceed capacity times the 0.75 load factor, the array doubles and everything re-hashes — so pre-sizing avoids that cost. Lookup is average O(1), worst case O(N) with pathological hashing."
+
+<CTA language="java" label="Practice HashMap questions with the AI interviewer" />
+
+## Related guides
+
+- [Top Java Interview Questions](/blog/top-java-interview-questions)
+- [Java Garbage Collection and the JVM Memory Model](/blog/java-garbage-collection-jvm-memory-model)
+- [The Big-O Cheat Sheet](/blog/big-o-complexity-cheat-sheet)

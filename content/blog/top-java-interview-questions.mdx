@@ -1,0 +1,136 @@
+---
+title: "Top 25 Java Interview Questions (with Answers)"
+description: "Java interview questions on the JVM memory model, collections, concurrency, generics, and modern features — the ones hiring managers actually ask."
+slug: top-java-interview-questions
+date: "2026-08-08"
+updated: "2026-08-08"
+language: java
+level: mid
+tags: [java, interview-questions, coding-interview]
+featured: true
+excerpt: "25 Java interview questions across the JVM memory model, Collections, concurrency, exception handling, and modern Java features."
+---
+
+Java interviews are famously layered: the warm-up covers core language mechanics, the middle probes the Collections framework and the JVM, and senior rounds push into concurrency and design. Here are the questions that recur, with the answers interviewers expect.
+
+## 1–5: Core language and OOP
+
+**1. The four pillars of OOP in Java?**
+
+Encapsulation (hide state, expose behavior via access modifiers), inheritance (is-a via `extends`), polymorphism (same interface, many implementations — via overloading and overriding), and abstraction (hide implementation detail behind interfaces/abstract classes). A follow-up always arrives: *when would you prefer composition over inheritance?*
+
+**2. Composition vs inheritance?**
+
+Prefer composition when the relationship is "has-a" not "is-a", when you want to avoid fragile base classes and deep hierarchies, and when behavior can change at runtime. `final` classes and `sealed` hierarchies nudge you toward composition for most real designs.
+
+**3. What's the difference between an interface and an abstract class?**
+
+An interface defines a contract (since Java 8 it can carry `default` and `static` methods); an abstract class provides partial implementation and state. A class can implement many interfaces but extend only one class. Since Java 8, functional interfaces (one abstract method) drive lambdas.
+
+**4. Can you have multiple inheritance in Java?**
+
+Only through interfaces. A class implements multiple interfaces; ambiguity in `default` methods must be resolved explicitly. Java deliberately avoids class-based multiple inheritance.
+
+**5. What is `final`?**
+
+On a variable: cannot reassign (reference finality, not object immutability). On a method: cannot override. On a class: cannot extend.
+
+## 6–10: The Collections framework
+
+**6. How does `HashMap` work internally?**
+
+An array of buckets; each bucket is a linked list (or a red-black tree once a bucket exceeds 8 nodes). On `put`, the key's `hashCode()` is used to pick the bucket, then `equals()` resolves collisions. `hashCode()` and `equals()` must be consistent — equal objects, equal hashes. Default capacity 16, load factor 0.75, resizes by doubling.
+
+**7. `HashMap` vs `ConcurrentHashMap`?**
+
+`HashMap` is not thread-safe. `ConcurrentHashMap` partitions the map into segments and locks per-bucket (fine-grained locking) — readers run lock-free, so reads scale far better than a fully synchronized `Hashtable`.
+
+**8. `ArrayList` vs `LinkedList`?**
+
+`ArrayList` is a growable array — O(1) random access, O(N) middle insert/delete. `LinkedList` is a doubly-linked list — O(1) head/tail ops, O(N) access. In practice, `ArrayList` wins almost everywhere; `LinkedList`'s cache-unfriendliness hurts even iteration.
+
+**9. What's a `TreeMap`?**
+
+A red-black tree map — keys are ordered, giving `firstKey()`, `ceilingKey()`, ranges, and O(log N) operations. Use it when you need sorted iteration; otherwise `HashMap`.
+
+**10. Why override `equals()` and `hashCode()` together?**
+
+If you use an object as a map key or in a set, Java finds the bucket by `hashCode` and confirms by `equals`. Override only `equals` and the contract breaks — two "equal" objects land in different buckets. See also the immutable-key rule: mutating a key after insertion corrupts the map.
+
+## 11–15: JVM, memory, and garbage collection
+
+**11. Describe the JVM memory model.**
+
+Method area (Metaspace since Java 8 — class metadata), heap (Eden, Survivor S0/S1, Old/Tenured), stack (per-thread frames), and native method stacks. GC root references (stack locals, static fields) anchor the object graph.
+
+**12. What happens during a Young GC?**
+
+New objects land in Eden. On a minor GC, live objects move to a Survivor space (S0), age, and after enough survive, promote to the Old generation. The generational hypothesis — most objects die young — is what makes this fast.
+
+**13. G1 vs ZGC?**
+
+G1 (default since Java 9) is region-based, bounded-pause garbage collector. ZGC is a concurrent, low-latency collector targeting large heaps with sub-millisecond pauses, at some throughput cost. The answer that scores: "G1 for throughput balance, ZGC when pause times dominate requirements."
+
+**14. What can cause an `OutOfMemoryError`?**
+
+`java.lang.OutOfMemoryError: Java heap space` (allocation failure), `GC overhead limit exceeded` (GC churn with no reclaimable memory), `Metaspace` (class metadata exhaustion), and native leaks. Distinguish heap exhaustion from a real leak — a retained reference graph is a leak; un-bounded caches are often just capacity.
+
+**15. What is the difference between a stack and heap allocation?**
+
+Stack: fixed-size, per-thread, allocation is cheap (just stack pointer), dies when the frame returns. Heap: shared, GC-managed, slower allocation. Primitives and references live on the stack; objects live on the heap.
+
+## 16–20: Exceptions, concurrency, and modern features
+
+**16. Checked vs unchecked exceptions?**
+
+Checked exceptions (`IOException`) must be declared or handled at compile time; unchecked (`RuntimeException` and `Error`) don't. The debate: checked exceptions force callers to deal with recoverable conditions. The modern guidance — keep checked exceptions for genuinely recoverable cases, use unchecked for programmer errors.
+
+**17. What is try-with-resources?**
+
+A `try` block that declares resources implementing `AutoCloseable` and closes them automatically in reverse declaration order.
+
+```java
+try (BufferedReader br = new BufferedReader(new FileReader("f.txt"))) {
+    // auto-closed, even on exception
+}
+```
+
+**18. What is `volatile`?**
+
+A field always read from and written to main memory, never cached in a thread's working memory. It guarantees visibility but not atomicity — `volatile int` is not a thread-safe counter. That's the distinction interviewers probe.
+
+**19. `synchronized` vs `ReentrantLock`?**
+
+`synchronized` is intrinsic, simpler, auto-releasing; `ReentrantLock` adds try-lock with timeout, interruptible locking, and multiple condition variables. Both are reentrant — a thread holding the lock can reacquire it.
+
+**20. What is `CompletableFuture`?**
+
+A `Future` with a functional programming layer — `thenApply`, `thenCompose`, `exceptionally`, `allOf`. It composes asynchronous stages without blocking threads. A senior candidate should contrast it with `ExecutorService.submit` + blocking `.get()`.
+
+## 21–25: Senior-level reasoning
+
+**21. What is type erasure?**
+
+Generic type parameters are erased at runtime — `List<String>` and `List<Integer>` are both `List`. Hence no runtime generic type info, no primitive generic parameters, and `ClassCastException` can appear at casts. The PECS rule (`? extends T` for producers, `? super T` for consumers) exists to keep erasure-safe variance sound.
+
+**22. What are Records?**
+
+`record Point(int x, int y)` — immutable data carriers with auto-generated constructor, accessors, `equals`/`hashCode`/`toString`. The modern replacement for verbose `POJOs`.
+
+**23. What is the Stream API?**
+
+A lazy pipeline over a data source — `filter`, `map`, `sorted`, `collect` — with intermediate operations deferred until a terminal operation. Watch for the trap: streams don't mutate the source, and reusing a stream after its terminal operation throws.
+
+**24. How do virtual threads help?**
+
+Project Loom's `Thread.ofVirtual()` — millions of lightweight threads parked on I/O without the 1MB-stack cost of platform threads. Blocking code regains scalability without async rewriting. Modern Java interviews increasingly probe this.
+
+**25. What's the difference between `==` and `.equals()` on objects?**
+
+`==` compares references; `.equals()` compares values. The classic trap: `Integer` caching makes `Integer.valueOf(100) == Integer.valueOf(100)` true (cache range `-128..127`) while `==` on larger values is false. Interviewers love this one.
+
+<CTA language="java" label="Practice Java questions with the AI interviewer" />
+
+## How to study these
+
+Java interviews reward explaining mechanisms over reciting facts. For each answer above, drill into the "why" — why `ConcurrentHashMap` scales, why `hashCode` and `equals` must be paired, why erasure exists. Practice the live interview format where a follow-up question lands the moment you stop talking; that's the format the scorecard is built to evaluate.
