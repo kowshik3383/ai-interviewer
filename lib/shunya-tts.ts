@@ -22,7 +22,7 @@ export interface ShunyaTTSResponse {
 export async function generateShunyaSpeech(
   opts: ShunyaTTSOptions
 ): Promise<ShunyaTTSResponse> {
-  const apiKey = process.env.SHUNYALABS_API_KEY || "***REMOVED***";
+  const apiKey = process.env.SHUNYALABS_API_KEY || "";
   const voice = opts.voice || process.env.SHUNYA_TTS_VOICE || "Varun";
   const language = opts.language || "en";
   const model = opts.model || process.env.SHUNYA_ASR_MODEL || "zero-indic";
