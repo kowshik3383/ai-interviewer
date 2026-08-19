@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Providers from "@/components/Providers";
 import "./globals.css";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+const SITE_URL = "https://ai-interviewer-ten-delta.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

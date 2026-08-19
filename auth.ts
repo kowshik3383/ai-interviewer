@@ -6,6 +6,10 @@ import GoogleProvider from "next-auth/providers/google";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "",
   session: { strategy: "jwt" },
+  trustedHosts: [
+    "ai-interviewer-ten-delta.vercel.app",
+    "kowshik-valipireddy.pages.dev",
+  ],
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || "",

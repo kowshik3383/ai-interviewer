@@ -66,7 +66,7 @@ export async function callWithFallback(opts: CallOptions): Promise<CallResult> {
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app",
+            "HTTP-Referer": "https://ai-interviewer-ten-delta.vercel.app",
             "X-Title": "AI Technical Interviewer",
           },
           body: JSON.stringify(requestBody),

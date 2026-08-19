@@ -8,7 +8,7 @@ import { getAllPosts } from "@/lib/blog";
 import { SUPPORTED_LANGUAGES } from "@/lib/prompts/question-banks";
 import { ArrowRight } from "lucide-react";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+const SITE_URL = "https://ai-interviewer-ten-delta.vercel.app";
 
 export const metadata: Metadata = {
   title: "Interview Prep Guides & Tech Deep-Dives | AI Technical Interviewer",

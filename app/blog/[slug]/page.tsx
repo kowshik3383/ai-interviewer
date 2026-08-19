@@ -9,7 +9,7 @@ import TableOfContents from "@/components/blog/TableOfContents";
 import RelatedPosts from "@/components/blog/RelatedPosts";
 import { getPost, getAllPosts, getRelatedPosts, formatDate, languageName } from "@/lib/blog";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://ai-interviewer-ten-delta.vercel.app";
+const SITE_URL = "https://ai-interviewer-ten-delta.vercel.app";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
